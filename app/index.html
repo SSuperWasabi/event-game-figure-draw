@@ -478,6 +478,7 @@
     <div class="scroll-theatre">
       <div class="summon-ring"></div>
       <div class="scroll-drag" id="scroll-drag" role="button" tabindex="0" aria-label="왼쪽에서 오른쪽으로 드래그해 소환서 열기. Enter 키로도 열 수 있습니다.">
+        <img class="scroll-fallback" src="assets/figure/sacred-poster.jpg" alt="" aria-hidden="true">
         <video id="scroll-idle-video" class="scroll-loop-video" src="assets/figure/sacred-idle.mp4" poster="assets/figure/sacred-poster.jpg" loop playsinline preload="auto" aria-hidden="true"></video>
         <video id="scroll-video" class="scroll-loop-video" src="assets/figure/sacred-open.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
       </div>
@@ -536,7 +537,7 @@
 /* ════════════════ 저장소 키 ════════════════ */
 const K_CFG='figure-draw.config.v1', K_STOCK='figure-draw.stock.v1', K_LOG='figure-draw.log.v1', K_COOL='figure-draw.cooldown.v1';
 const K_STATE='figure-draw.draw-state.v1';
-const APP_VER='figure-v10';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
+const APP_VER='figure-v11';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
 
 /* ════════════════ 기본 설정 (관리자 미설정 시) ════════════════ */
 function defaultConfig(){

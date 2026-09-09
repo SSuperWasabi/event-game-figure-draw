@@ -33,9 +33,10 @@
 .scroll-seal{width:75%;max-height:90%;object-fit:contain;filter:drop-shadow(0 0 22px #c687ffa0);z-index:3;transform:translateX(calc(var(--progress)*24%)) rotate(calc(var(--progress)*-16deg)) scale(calc(1 - var(--progress)*.22));opacity:calc(1 - var(--progress)*.8);pointer-events:none}
 .scroll-loop-video{position:absolute;inset:10px;width:calc(100% - 20px);height:calc(100% - 20px);object-fit:contain;border-radius:12px;z-index:3;pointer-events:none;opacity:1;transform:none}
 #scroll-video{visibility:hidden}
+.scroll-fallback{position:absolute;inset:10px;width:calc(100% - 20px);height:calc(100% - 20px);object-fit:contain;border-radius:12px;pointer-events:none;z-index:2}
 #scroll-whiteout{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:2000}
-.scroll-drag.scrubbing #scroll-video{visibility:visible}
-.scroll-drag.scrubbing #scroll-idle-video{visibility:hidden}
+.scroll-drag.scrubbing.video-ready #scroll-video{visibility:visible}
+.scroll-drag.scrubbing.video-ready #scroll-idle-video{visibility:hidden}
 #scr-open .summon-ring,#scr-open .summon-particles,#scr-open .summon-flash{display:none}
 .scroll-paper{position:absolute;left:9%;right:9%;top:22%;bottom:22%;clip-path:inset(0 calc((1 - var(--progress))*100%) 0 0);background:linear-gradient(90deg,#b97431,#fff0b6 9%,#eacb87 50%,#ffedb9 90%,#b77c36);border-block:9px solid #bf8b42;box-shadow:0 0 55px #ffdf99;display:grid;place-items:center;color:#8a571d;transform:perspective(700px) rotateY(calc((1 - var(--progress))*-30deg));pointer-events:none}
 .scroll-paper:before{content:'✦';font-size:100px;border:3px double #ab7842;border-radius:50%;width:130px;height:130px;display:grid;place-items:center;text-shadow:0 0 25px white}

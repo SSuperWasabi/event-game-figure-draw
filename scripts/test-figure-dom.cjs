@@ -28,6 +28,7 @@ Object.defineProperty(video,'duration',{value:NaN,configurable:true});Object.def
 evaluate('scrollSeekReady=false');
 gesture('pointerdown',20);gesture('pointermove',150);
 assert.equal(evaluate('scrollScrubbing'),true);
+assert.equal(drag.classList.contains('video-ready'),false);
 assert.equal(w.localStorage.getItem('figure-draw.draw-state.v1'),null);
 Object.defineProperty(video,'duration',{value:4.066667,configurable:true});Object.defineProperty(video,'readyState',{value:1,configurable:true});
 video.dispatchEvent(new w.Event('loadedmetadata'));
@@ -66,6 +67,9 @@ w.revealScroll();w.revealScroll();
 assert.equal(w.localStorage.getItem('figure-draw.draw-state.v1'),null);
 Object.defineProperty(video,'duration',{value:4.066667,configurable:true});Object.defineProperty(video,'readyState',{value:1,configurable:true});
 video.dispatchEvent(new w.Event('loadedmetadata'));video.dispatchEvent(new w.Event('canplay'));
+assert.equal(w.localStorage.getItem('figure-draw.draw-state.v1'),null); // Metadata alone is not a playable frame.
+Object.defineProperty(video,'readyState',{value:2,configurable:true});
+video.dispatchEvent(new w.Event('loadeddata'));
 assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log.length,1);
 assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log[0].drawMode,'stock');
 assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log[0].figureWinPercent,null);

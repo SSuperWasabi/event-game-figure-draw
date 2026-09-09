@@ -25,7 +25,18 @@ function scrollWhiteout(value,fade=false){const el=document.getElementById('scro
 function updateScrollWhiteout(time){const duration=scrollVideo().duration;if(Number.isFinite(duration))scrollWhiteout((time-(duration-.3))/.3);}
 let scrollSeekReady=false,figureObjectUrls=[],scrollPlaybackFailed=false;
 let scrollPrepareTask=null,scrollAutoPending=false,scrollReadyTimer=null,scrollPrimeTask=null;
+let scrollPrimeEpoch=0;
+let scrollPreparedUrl=null;
 const scrollSource=document.getElementById('scroll-video').getAttribute('src');
+// Bounded local diagnostics: no network upload or participant information.
+window.scrollMediaDiagnostics=[];
+for(const id of ['scroll-idle-video','scroll-video']){
+  const video=document.getElementById(id);
+  for(const event of ['loadstart','loadedmetadata','loadeddata','playing','pause','stalled','error'])video.addEventListener(event,()=>{
+    window.scrollMediaDiagnostics.push({event,id,time:Date.now(),readyState:video.readyState,networkState:video.networkState,currentTime:video.currentTime,error:video.error?.message||'',source:video.currentSrc.startsWith('blob:')?'blob':'url'});
+    if(window.scrollMediaDiagnostics.length>80)window.scrollMediaDiagnostics.shift();
+  });
+}
 // Figure win: the full-screen summon clip plays (with sound) before the result screen. Participation prizes skip it.
 let summonTimer=null,summonEpoch=-1,summonUnlocked=false,summonTrack=false;
 const summonStage=()=>document.getElementById('summon-stage'),summonVideos=()=>[document.getElementById('summon-video'),document.getElementById('summon-video-blur')];
@@ -68,21 +79,24 @@ function prepareScrollVideo(){
     try{
       const response=await fetch(scrollSource,{signal:controller.signal});if(!response.ok)throw Error('영상 다운로드 실패');
       const blob=await response.blob(),v=scrollVideo();
+      const url=URL.createObjectURL(blob);figureObjectUrls.push(url);scrollPreparedUrl=url;
       // Never replace a source under a gesture or an automatic reveal.
-      if(!scrollScrubbing&&!drawing){const url=URL.createObjectURL(blob);figureObjectUrls.push(url);v.src=url;v.load();}
+      if(currentScreen!=='scr-open'&&!scrollScrubbing&&!drawing){v.src=url;v.load();}
     }catch(error){console.warn('Scroll download: using original video URL',error);}
     finally{clearTimeout(timer);scrollPrepareTask=null;}
   })();
   return scrollPrepareTask;
 }
 function scrollHasMetadata(){const v=scrollVideo();return Number.isFinite(v.duration)&&v.duration>0&&v.readyState>=1;}
+function scrollHasFrame(){return scrollHasMetadata()&&scrollVideo().readyState>=2&&!scrollVideo().error;}
 function primeScrollVideo(){
   const v=scrollVideo();if(scrollPrimeTask||drawing)return;
+  const epoch=++scrollPrimeEpoch;
   if(v.error){v.src=scrollSource;v.load();}
   v.muted=true;
   // Invoke play inside the gesture, even when preload has not decoded a frame.
-  scrollPrimeTask=v.play().then(()=>{if(!drawing){v.pause();if(scrollScrubbing){setScrollProgress(Number(document.getElementById('scroll-drag').style.getPropertyValue('--progress'))||0);}}})
-    .catch(error=>console.warn('Scroll preparation playback failed',error)).finally(()=>{scrollPrimeTask=null;});
+  scrollPrimeTask=v.play().then(()=>{if(epoch!==scrollPrimeEpoch)return;if(!drawing){v.pause();if(scrollScrubbing){setScrollProgress(Number(document.getElementById('scroll-drag').style.getPropertyValue('--progress'))||0);}}})
+    .catch(error=>console.warn('Scroll preparation playback failed',error)).finally(()=>{if(epoch===scrollPrimeEpoch)scrollPrimeTask=null;});
 }
 function cancelScrollWait(){scrollAutoPending=false;clearTimeout(scrollReadyTimer);scrollReadyTimer=null;}
 function waitForScroll(){
@@ -93,6 +107,7 @@ if(typeof fetch==='function'){prepareScrollVideo();prepareBlobVideo(['summon-vid
 window.addEventListener('pagehide',e=>{if(!e.persisted){figureObjectUrls.forEach(url=>URL.revokeObjectURL(url));figureObjectUrls=[];}});
 function startScrollLoop(){
   cancelScrollWait();
+  scrollPrimeEpoch++;scrollPrimeTask=null;
   ScrollSound.stop();scrollMix(currentScreen==='scr-open');scrollWhiteout(0);
   scrollScrubbing=false;scrollSeekTarget=null;scrollVideo().pause();
   document.getElementById('scroll-drag').classList.remove('scrubbing');
@@ -110,25 +125,32 @@ function startScrollLoop(){
 }
 function beginScrollScrub(){
   const v=scrollVideo();
-  if(!scrollHasMetadata()){primeScrollVideo();waitForScroll();}
-  document.getElementById('scroll-idle-video').pause();v.pause();v.muted=true;v.loop=false;scrollScrubbing=true;ScrollSound.begin();scrollMix(true);
-  document.getElementById('scroll-drag').classList.add('scrubbing');setScrollProgress(0);return true;
+  v.pause();v.muted=true;v.loop=false;scrollScrubbing=true;ScrollSound.begin();scrollMix(true);
+  const box=document.getElementById('scroll-drag');
+  box.classList.toggle('video-ready',scrollHasFrame());box.classList.add('scrubbing');setScrollProgress(0);
+  if(scrollHasFrame())document.getElementById('scroll-idle-video').pause();
+  else{waitForScroll();primeScrollVideo();}
+  return true;
 }
 function flushScrollSeek(){
   const v=scrollVideo();if(!scrollScrubbing||v.seeking||scrollSeekTarget===null||!Number.isFinite(v.duration)||v.duration<=0)return;
   const target=scrollSeekTarget;scrollSeekTarget=null;
+  if(Math.abs(v.currentTime-target)<.002)return;
   try{v.currentTime=target;}catch{scrollSeekTarget=target;}
 }
 scrollVideo().addEventListener('seeked',flushScrollSeek);
 function scrollMediaReady(){
-  scrollSeekReady=scrollHasMetadata();if(!scrollSeekReady)return;
+  scrollSeekReady=scrollHasFrame();
+  if(scrollScrubbing&&!scrollAutoPending&&scrollHasMetadata())setScrollProgress(Number(document.getElementById('scroll-drag').style.getPropertyValue('--progress'))||0);
+  if(!scrollSeekReady)return;
   clearTimeout(scrollReadyTimer);scrollReadyTimer=null;
-  if(scrollScrubbing)setScrollProgress(Number(document.getElementById('scroll-drag').style.getPropertyValue('--progress'))||0);
+  if(scrollScrubbing){document.getElementById('scroll-drag').classList.add('video-ready');document.getElementById('scroll-idle-video').pause();}
   if(scrollAutoPending&&currentScreen==='scr-open'&&!drawing){cancelScrollWait();revealScroll();}
 }
 scrollVideo().addEventListener('loadedmetadata',scrollMediaReady);
 scrollVideo().addEventListener('loadeddata',scrollMediaReady);
 scrollVideo().addEventListener('canplay',scrollMediaReady);
+scrollVideo().addEventListener('seeked',scrollMediaReady);
 // Shared ending for both paths: fully white, result screen underneath, then the white lifts.
 function finishScrollReveal(){
   ScrollSound.stop();scrollScrubbing=false;scrollSeekTarget=null;scrollVideo().pause();scrollWhiteout(1);clearTimeout(openingTimer);
@@ -151,7 +173,7 @@ function playOpeningVideo(){
   v.loop=false;v.play().catch(scrollPlaybackError);
 }
 go = function(id){
-  if(id!=='scr-open')cancelScrollWait();
+  if(id!=='scr-open'){cancelScrollWait();scrollPrimeEpoch++;scrollPrimeTask=null;}
   figureBase.go(id);
   if(id==='scr-open')startScrollLoop();else{ScrollSound.stop();scrollMix(false);scrollScrubbing=false;scrollSeekTarget=null;scrollVideo().pause();document.getElementById('scroll-idle-video').pause();if(id!=='scr-result'){cancelAnimationFrame(whiteoutFrame);scrollWhiteout(0);}}
   for(const key of ['idle-video','idle-video-blur']){const v=document.getElementById(key);if(id==='scr-idle'&&v.getAttribute('src')&&v.style.display!=='none')v.play().catch(()=>{});else v.pause();}
@@ -185,12 +207,13 @@ function chooseScroll(i){selectedScroll=selectedScroll===i?null:i;playSfx('pick'
 function randomScroll(){selectedScroll=Math.floor(Math.random()*12);playSfx('pick');renderScrollSelection();manageIdle();}
 function openSelectedScroll(){
   if(selectedScroll==null)return;
+  if(scrollPreparedUrl&&scrollVideo().getAttribute('src')!==scrollPreparedUrl){scrollVideo().src=scrollPreparedUrl;scrollVideo().load();}
   drawing=false;setScrollProgress(0);document.getElementById('scr-open').classList.remove('opening');
   document.getElementById('scroll-open-btn').disabled=false;
   document.getElementById('scroll-open-btn').textContent='소환서 자동 오픈';scrollPlaybackFailed=false;
   document.getElementById('open-back').disabled=false;
   document.getElementById('open-number').textContent=`${selectedScroll+1}번 소환서`;
-  summonUnlock();primeScrollVideo();startBgm('play');go('scr-open');
+  summonUnlock();startBgm('play');go('scr-open');
 }
 function setScrollProgress(value){
   document.getElementById('scroll-drag').style.setProperty('--progress',value);
@@ -231,7 +254,7 @@ function revealScroll(){
   if(currentScreen!=='scr-open')return;
   if(drawing){if(scrollPlaybackFailed)playOpeningVideo();return;}
   if(!scrollScrubbing&&!beginScrollScrub())return;
-  if(!scrollHasMetadata()){scrollAutoPending=true;primeScrollVideo();waitForScroll();return;}
+  if(!scrollHasFrame()){scrollAutoPending=true;primeScrollVideo();waitForScroll();return;}
   cancelScrollWait();
   if(commitScrollDraw())playOpeningVideo();
 }
@@ -239,7 +262,7 @@ function revealScroll(){
 // frame: browsers that clamp that seek to `duration` would restart the open clip from its first frame.
 function completeScrollDrag(){
   if(currentScreen!=='scr-open'||drawing||!scrollScrubbing)return;
-  if(!scrollHasMetadata()){startScrollLoop();return;}
+  if(!scrollHasFrame()){startScrollLoop();return;}
   if(commitScrollDraw())finishScrollReveal();
 }
 // Progressive left-to-right drag; incomplete and cancelled gestures never draw.
