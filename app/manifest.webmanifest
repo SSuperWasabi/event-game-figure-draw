@@ -1,7 +1,7 @@
 {
-  "name": "컴투스 팝업 쿠지",
-  "short_name": "쿠지",
-  "description": "사내 팝업 스토어 쿠지 이벤트 게임",
+  "name": "제라투 피규어 드로우",
+  "short_name": "피규어 드로우",
+  "description": "사내 피규어 소환 이벤트",
   "start_url": "./index.html",
   "scope": "./",
   "display": "fullscreen",

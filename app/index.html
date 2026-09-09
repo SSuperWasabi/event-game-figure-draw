@@ -8,7 +8,8 @@
 <meta name="theme-color" content="#160A33">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/icon-192.png">
-<title>컴투스 팝업 쿠지</title>
+<title>제라투 피규어 드로우</title>
+
 <style>
   /* ════════ Com2uS Lucky Draw 디자인 시스템 토큰 (퍼플+골드) ════════ */
   @font-face{font-family:"Pretendard";font-weight:300;font-display:swap;src:local("Pretendard Light"),url("assets/fonts/Pretendard-Light.otf") format("opentype")}
@@ -156,7 +157,7 @@
   /* 미세 그레인 — 밴딩 제거·질감 */
   #scr-idle::after { content:""; position:absolute; inset:0; z-index:1; pointer-events:none; opacity:.05; mix-blend-mode:overlay;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:120px 120px; }
-  #scr-idle > *:not(#idle-video):not(.bubbles):not(.idle-sparkles):not(#admin-tap) { position:relative; z-index:3; }
+  #scr-idle > *:not(#idle-video):not(#idle-video-blur):not(.bubbles):not(.idle-sparkles):not(#admin-tap) { position:relative; z-index:3; }
   #scr-idle .touch-banner { position:relative; overflow:hidden; background:var(--grad-lucky); border:1px solid rgba(255,255,255,.5); color:var(--gold-ink); font-size:18px; font-weight:800; padding:15px 38px; border-radius:var(--r-pill); text-shadow:0 1px 1px rgba(255,255,255,.35); animation:pulse 1.6s infinite; }
   #scr-idle .touch-banner::after { content:""; position:absolute; top:0; left:-65%; width:55%; height:100%; pointer-events:none; background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent); animation:bannerShimmer 3.4s ease-in-out infinite; }
   @keyframes bannerShimmer { 0%{left:-65%} 55%,100%{left:135%} }
@@ -370,12 +371,14 @@
     #scr-result .btn-yellow { margin-top:28px; }
   }
 </style>
+<link rel="stylesheet" href="figure.css">
 </head>
 <body>
 <div id="kiosk">
 
   <!-- S1 대기 -->
   <div class="screen active" id="scr-idle">
+    <video id="idle-video-blur" muted loop playsinline aria-hidden="true" tabindex="-1" style="display:none"></video>
     <video id="idle-video" muted loop playsinline autoplay style="display:none"></video>
     <div class="bubbles" id="bubbles"></div>
     <div class="idle-sparkles">
@@ -389,11 +392,11 @@
     <div id="admin-tap"></div>
     <div class="idle-brand">
       <img class="idle-wordmark" src="assets/com2us-store-logo-white.svg" alt="COM2US STORE">
-      <div id="idle-logo" class="idle-headline"><span class="ld-1">LUCKY DRAW</span><span class="ld-2">EVENT</span></div>
-      <div class="idle-sub" id="idle-sub">컴투스 사내 스토어</div>
+      <div id="idle-logo" class="idle-headline"><span class="ld-1">ZERATU</span><span class="ld-2">FIGURE DRAW</span></div>
+      <div class="idle-sub" id="idle-sub"></div>
     </div>
     <div class="touch-banner" id="idle-banner">화면을 터치하면 시작합니다.</div>
-    <div class="copyright">2026 © Com2uS Popup Event</div>
+    <div class="copyright">2026 © Com2uS Figure Draw</div>
   </div>
 
   <!-- S2 IP 선택 -->
@@ -459,6 +462,29 @@
       <div id="result-hint">스태프에게 이 화면을 보여주세요</div>
     </div>
     <button class="btn btn-yellow" onclick="resetToIdle()">처음으로</button>
+    <div id="result-countdown" class="figure-countdown" aria-live="polite"></div>
+  </div>
+
+
+  <div class="screen figure-screen" id="scr-scrolls">
+    <div class="topbar"><button class="back" onclick="resetToIdle()" aria-label="처음으로">←</button><div class="title">소환서를 선택하세요</div></div>
+    <div class="selection-status"><span id="scroll-status" aria-live="polite"></span><button onclick="randomScroll()">랜덤 선택</button></div>
+    <div class="scroll-grid" id="scroll-grid"></div>
+    <div class="figure-footer"><button class="btn btn-yellow" id="scroll-next" onclick="openSelectedScroll()" disabled>소환서 열기</button><p>12개의 소환서 중 하나를 선택해주세요</p></div>
+  </div>
+  <div class="screen figure-screen" id="scr-open">
+    <div class="topbar"><button class="back" id="open-back" onclick="if(!drawing)go('scr-scrolls')" aria-label="소환서 다시 선택">←</button><div class="title">소환서를 펼쳐주세요<span id="open-number" class="open-number"></span></div></div>
+    <div class="scroll-theatre">
+      <div class="summon-ring"></div>
+      <div class="scroll-drag" id="scroll-drag" role="button" tabindex="0" aria-label="왼쪽에서 오른쪽으로 드래그해 소환서 열기. Enter 키로도 열 수 있습니다.">
+        <video id="scroll-idle-video" class="scroll-loop-video" src="assets/figure/sacred-idle.mp4" poster="assets/figure/sacred-poster.jpg" loop playsinline preload="auto" aria-hidden="true"></video>
+        <video id="scroll-video" class="scroll-loop-video" src="assets/figure/sacred-open.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+      </div>
+      <div class="drag-hint" aria-hidden="true"><div class="drag-track"><span class="drag-trail"></span><img class="drag-handle" src="assets/figure/drag-arrow.svg" alt=""></div></div>
+      <div class="summon-particles" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i><i style="--i:8"></i><i style="--i:9"></i><i style="--i:10"></i><i style="--i:11"></i><i style="--i:12"></i><i style="--i:13"></i><i style="--i:14"></i><i style="--i:15"></i><i style="--i:16"></i><i style="--i:17"></i><i style="--i:18"></i><i style="--i:19"></i><i style="--i:20"></i><i style="--i:21"></i><i style="--i:22"></i><i style="--i:23"></i><i style="--i:24"></i><i style="--i:25"></i><i style="--i:26"></i><i style="--i:27"></i><i style="--i:28"></i><i style="--i:29"></i><i style="--i:30"></i><i style="--i:31"></i></div><div class="summon-flash"></div>
+    </div>
+    <div class="drag-guide">스크롤을 오른쪽으로 밀거나 자동 오픈 버튼을 클릭하세요</div>
+    <button class="btn btn-yellow" id="scroll-open-btn" onclick="revealScroll()">소환서 자동 오픈</button>
   </div>
 
   <!-- S9 관리자 -->
@@ -508,23 +534,21 @@
 <script>
 /* ════════════════ 저장소 키 ════════════════ */
 const K_CFG='figure-draw.config.v1', K_STOCK='figure-draw.stock.v1', K_LOG='figure-draw.log.v1', K_COOL='figure-draw.cooldown.v1';
-const APP_VER='v31';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
+const K_STATE='figure-draw.draw-state.v1';
+const APP_VER='figure-v7';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
 
 /* ════════════════ 기본 설정 (관리자 미설정 시) ════════════════ */
 function defaultConfig(){
   return {
-    eventName:'컴투스 팝업 쿠지', adminPin:'0000', idleTimeoutSec:30, muted:false, npcs:[], idleVideos:[], cooldownMin:15,
+    eventName:'제라투 피규어 드로우', figureProbabilityEnabled:false, figureWinPercent:10, adminPin:'0000', idleTimeoutSec:30, muted:false, npcs:[], idleVideos:[], cooldownMin:15,
     showLineup:true,   // S3 경품 라인업 표시 (false = S1/S2 → 뽑기 직행)
     drawIdleSec:5,     // S4 뽑기 전 무입력 복귀(초, 0=끔) — 뽑기 확정 후에는 미적용
     ips:[{
-      id:'ip1', name:'서머너즈 워 컬렉션', heroImageKey:null,
-      lastOne:{ name:'스토어 할인 쿠폰', imageKey:null },
+      id:'ip1', name:'제라투 소환 이벤트', heroImageKey:null,
+      lastOne:{name:'',imageKey:null},
       prizes:[
-        { grade:'A상', name:'발키리 피규어', imageKey:null, count:2,  tier:'high' },
-        { grade:'B상', name:'이프리트 피규어', imageKey:null, count:3,  tier:'high' },
-        { grade:'C상', name:'빅 쿠션', imageKey:null, count:5,  tier:'high' },
-        { grade:'D상', name:'아크릴 스탠드(랜덤)', imageKey:null, count:10, tier:'normal' },
-        { grade:'E상', name:'스티커 세트', imageKey:null, count:20, tier:'normal' },
+        {grade:'피규어',name:'제라투 피규어',imageKey:null,count:0,tier:'high',kind:'figure'},
+        {grade:'참가상',name:'참가상',imageKey:null,count:0,tier:'normal',kind:'participation'},
       ],
     }],
   };
@@ -533,7 +557,7 @@ function defaultConfig(){
 /* ════════════════ 설정/재고/로그 로드·저장 ════════════════ */
 let cfg = loadCfg(), stock = loadStock(), logArr = loadLog();
 function loadCfg(){ try{ const r=localStorage.getItem(K_CFG); if(r) return JSON.parse(r);}catch(e){} return defaultConfig(); }
-function saveCfg(){ try{ localStorage.setItem(K_CFG, JSON.stringify(cfg)); }catch(e){} }
+function saveCfg(){ try{ localStorage.setItem(K_CFG, JSON.stringify(cfg)); return true; }catch(e){ return false; } }
 /* 번들 상품: prize.bundle=true & prize.subs=[{name,imageKey,count}]. 재고 칸은 단순=숫자, 번들=하위별 배열 */
 function isBundle(p){ return !!(p && p.bundle && Array.isArray(p.subs) && p.subs.length); }
 function prizeFreshStock(p){ return isBundle(p) ? p.subs.map(s=>+s.count||0) : (+p.count||0); }
@@ -542,12 +566,13 @@ function prizeRemain(ip,i){ const arr=stock[ip.id]; return arr ? cellRemain(arr[
 function prizeTotal(p){ return isBundle(p) ? p.subs.reduce((a,s)=>a+(+s.count||0),0) : (+p.count||0); }
 function freshStock(){ const s={}; cfg.ips.forEach(ip=> s[ip.id]=ip.prizes.map(prizeFreshStock)); return s; }
 function loadStock(){
+  try{ const state=JSON.parse(localStorage.getItem(K_STATE)); if(state&&state.stock)return state.stock; }catch(e){}
   try{ const r=localStorage.getItem(K_STOCK); if(r){ const s=JSON.parse(r); return s; } }catch(e){}
   return freshStock();
 }
-function saveStock(){ try{ localStorage.setItem(K_STOCK, JSON.stringify(stock)); }catch(e){} }
-function loadLog(){ try{ const r=localStorage.getItem(K_LOG); if(r) return JSON.parse(r);}catch(e){} return []; }
-function saveLog(){ try{ localStorage.setItem(K_LOG, JSON.stringify(logArr)); }catch(e){} }
+function saveStock(){ try{ localStorage.setItem(K_STATE,JSON.stringify({stock,log:logArr})); return true; }catch(e){ toast('재고 저장 실패: 저장 공간을 확인해주세요'); return false; } }
+function loadLog(){ try{ const state=JSON.parse(localStorage.getItem(K_STATE)); if(state&&Array.isArray(state.log))return state.log; }catch(e){} try{ const r=localStorage.getItem(K_LOG); if(r) return JSON.parse(r);}catch(e){} return []; }
+function saveLog(){ return saveStock(); }
 /* 설정과 재고 정합성 보정 (등급 수가 바뀐 IP는 재고 배열 맞춤) */
 function reconcileStock(){
   let changed=false;
@@ -650,8 +675,12 @@ document.getElementById('kiosk').addEventListener('pointerdown', resetIdle, true
 
 /* ════════════════ S1 대기 ════════════════ */
 let curIp=null, drawing=false, lastResult=null, lastNpcId=null, lastIdleVideoId=null;
+let idleMediaEpoch=0;
 async function playIdleVideo(){
+  const epoch=++idleMediaEpoch;
   const v=document.getElementById('idle-video');
+  const background=document.getElementById('idle-video-blur');
+  v.pause();background.pause();background.removeAttribute('src');
   if(v._ourl){ try{ URL.revokeObjectURL(v._ourl); }catch(e){} v._ourl=null; }
   const vids=cfg.idleVideos||[];
   let blob=null;
@@ -662,8 +691,13 @@ async function playIdleVideo(){
     lastIdleVideoId=pick.id;
     blob=await idbGet('idlevid_'+pick.id);
   }
+  if(epoch!==idleMediaEpoch)return;
   if(blob){ try{ let src; if(typeof blob==='string'){ src=blob; } else { const b=mediaBlob(blob); if(!b) throw 0; src=v._ourl=URL.createObjectURL(b); } v.src=src; v.style.display='block'; v.play().catch(()=>{}); }catch(e){ v.style.display='none'; } }
-  else { v.removeAttribute('src'); v.style.display='none'; }
+  else { v.src='assets/figure/idle.mp4'; v.style.display='block'; v.play().catch(()=>{}); }
+  if(v.style.display!=='none'){
+    background.src=v.src;background.style.display='block';
+    if(currentScreen==='scr-idle')background.play().catch(()=>{});else v.pause();
+  }else background.style.display='none';
 }
 async function bootIdle(){
   await playIdleVideo();
@@ -1124,7 +1158,7 @@ function admClearLog(){ if(confirm('당첨 로그를 모두 삭제할까요? (CS
    범위 선택(전체/영상 제외) + 순차 로딩(피크 완화). 영상 제외 백업은 가져올 때 대상 기기의 영상을 유지. */
 const KUJI_MAGIC='KUJI', KUJI_VER=2;
 /* 이 기기 설정 기준 영상 키 집합 (대기영상 + 영상 NPC + 레거시) */
-function videoKeySet(c){ const s=new Set(['idle_video']); ((c&&c.idleVideos)||[]).forEach(x=>s.add('idlevid_'+x.id)); ((c&&c.npcs)||[]).forEach(n=>{ if(n.type==='video') s.add('npc_'+n.id); }); return s; }
+function videoKeySet(c){ const s=new Set(['idle_video']); ((c&&c.ips)||[]).forEach(ip=>(ip.prizes||[]).forEach(p=>{if(p.videoKey)s.add(p.videoKey);if(p.popupVideoKey)s.add(p.popupVideoKey);})); ((c&&c.idleVideos)||[]).forEach(x=>s.add('idlevid_'+x.id)); ((c&&c.npcs)||[]).forEach(n=>{ if(n.type==='video') s.add('npc_'+n.id); }); return s; }
 function summarizeMedia(arr){ const c={img:0,audio:0,other:0}; (arr||[]).forEach(m=>{ if(m.kind==='image')c.img++; else if(/^(bgm_|sfx_)/.test(m.key))c.audio++; else c.other++; }); return c; }
 function dlBlob(blob,name){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ try{a.remove();}catch(e){} URL.revokeObjectURL(url); },1500); }
 function backupName(){ const d=new Date(), p=n=>String(n).padStart(2,'0'); return `kuji-backup-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.kuji`; }
@@ -1179,7 +1213,7 @@ async function buildExportPart(){
     }
     // 설정·재고·로그는 1번 파일에만 담는다
     const manifest={ v:2, app:'kuji', scope:job.scope, part:job.idx+1, parts:job.total, exportedAt:new Date().toISOString(),
-      ls: job.idx===0 ? { cfg:localStorage.getItem(K_CFG), stock:localStorage.getItem(K_STOCK), log:localStorage.getItem(K_LOG) } : undefined, media };
+      ls: job.idx===0 ? { cfg:localStorage.getItem(K_CFG), stock:JSON.stringify(stock), log:JSON.stringify(logArr) } : undefined, media };
     const mBytes=enc.encode(JSON.stringify(manifest));
     const header=new Uint8Array(8); header.set(enc.encode(KUJI_MAGIC),0);
     new DataView(header.buffer).setUint32(4, mBytes.length, true);
@@ -1284,12 +1318,14 @@ async function applyBackup(buf){
       // 영상 목록은 이 기기 것을 유지 (백업 cfg의 영상 참조는 이 기기에 파일이 없음)
       const nc=JSON.parse(ls.cfg);
       nc.idleVideos = oldCfg.idleVideos||[];
+      (nc.ips||[]).forEach(ip=>(ip.prizes||[]).forEach((p,i)=>{ const oldIp=(oldCfg.ips||[]).find(x=>x.id===ip.id); const old=oldIp&&oldIp.prizes[i]; for(const key of ['videoKey','popupVideoKey']){delete p[key];if(old&&old[key])p[key]=old[key];} }));
       nc.npcs = [ ...((nc.npcs||[]).filter(n=>n.type!=='video')), ...((oldCfg.npcs||[]).filter(n=>n.type==='video')) ];
       localStorage.setItem(K_CFG, JSON.stringify(nc));
     } else localStorage.setItem(K_CFG, ls.cfg);
   }
   if(ls.stock!=null) localStorage.setItem(K_STOCK, ls.stock);
   if(ls.log!=null) localStorage.setItem(K_LOG, ls.log);
+  if(ls.stock!=null || ls.log!=null) localStorage.setItem(K_STATE, JSON.stringify({stock:ls.stock!=null?JSON.parse(ls.stock):stock,log:ls.log!=null?JSON.parse(ls.log):logArr}));
   // 분할 백업: 1번 파일에서만 기존 데이터 정리, 2번째부터는 덧쓰기만 (순서대로 가져오기 전제)
   if((manifest.part||1)===1){
     if(scope==='novideo'){
@@ -1489,9 +1525,10 @@ document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
     if(isLocal){
       try{
         const regs = await navigator.serviceWorker.getRegistrations();
-        if(regs.length){
-          await Promise.all(regs.map(r=>r.unregister()));
-          if(window.caches){ const ks=await caches.keys(); await Promise.all(ks.map(k=>caches.delete(k))); }
+        if(regs.some(r=>r.scope===new URL('./',location.href).href)){
+          const scope=new URL('./',location.href).href;
+          await Promise.all(regs.filter(r=>r.scope===scope).map(r=>r.unregister()));
+          if(window.caches){ const ks=await caches.keys(); await Promise.all(ks.filter(k=>k.startsWith('figure-draw-')).map(k=>caches.delete(k))); }
           location.reload(); return;
         }
       }catch(e){}
@@ -1501,5 +1538,13 @@ document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
   }
 })();
 </script>
+<script src="draw-engine.js"></script>
+<div id="summon-stage" aria-hidden="true">
+  <video id="summon-video-blur" src="assets/figure/zeratu-summon.mp4" muted playsinline preload="auto" tabindex="-1"></video>
+  <video id="summon-video" src="assets/figure/zeratu-summon.mp4" poster="assets/figure/zeratu-summon.jpg" playsinline preload="auto" tabindex="-1"></video>
+</div>
+<div id="scroll-whiteout" aria-hidden="true"></div>
+<script src="scroll-audio.js"></script>
+<script src="figure.js"></script>
 </body>
 </html>

@@ -1,8 +1,29 @@
 /* 컴투스 팝업 쿠지 — Service Worker
    앱 자산을 사전 캐싱해 오프라인에서도 동작하게 한다.
    ※ 앱을 수정·재배포할 때는 CACHE 버전을 올려야 태블릿이 새 버전을 받는다. */
-const CACHE = 'figure-draw-v31';
+const CACHE = 'figure-draw-v7';
 const ASSETS = [
+  './figure.css',
+  './draw-engine.js',
+  './figure.js',
+  './scroll-audio.js',
+  './assets/figure/scroll.webp',
+  './assets/figure/scroll-card.webp',
+  './assets/figure/zeratu.webp',
+  './assets/figure/arena.webp',
+  './assets/figure/idle.mp4',
+  './assets/figure/sacred-idle.mp4',
+  './assets/figure/sacred-open.mp4',
+  './assets/figure/sacred-open.wav',
+  './assets/figure/sacred-idle.wav',
+  './assets/figure/sacred-poster.jpg',
+  './assets/figure/zeratu-summon.mp4',
+  './assets/figure/zeratu-summon.jpg',
+  './assets/figure/zeratu-summon.wav',
+  './assets/figure/drag-arrow.svg',
+  './assets/frames/frame-normal.png?v=2',
+  './assets/frames/frame-purple-card.png?v=2',
+  './assets/frames/frame-gold-card.png?v=2',
   './',
   './index.html',
   './manifest.webmanifest',
@@ -46,13 +67,29 @@ self.addEventListener('activate', e => {
    업로드한 이미지·영상·BGM은 IndexedDB에 있으므로 SW 캐싱 대상이 아니다. */
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
-      if (res && res.status === 200 && res.type === 'basic') {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy));
+  if(new URL(e.request.url).origin!==self.location.origin)return;
+  e.respondWith((async()=>{
+    const cache=await caches.open(CACHE);
+    const hit=await cache.match(e.request);
+    if(hit){
+      const range=e.request.headers.get('range');
+      if(range){
+        const bytes=await hit.arrayBuffer(),match=/^bytes=(\d*)-(\d*)$/.exec(range);
+        if(!match)return new Response(null,{status:416,headers:{'Content-Range':`bytes */${bytes.byteLength}`}});
+        const start=match[1]?Number(match[1]):Math.max(0,bytes.byteLength-Number(match[2]));
+        const end=match[1]&&match[2]?Math.min(Number(match[2]),bytes.byteLength-1):bytes.byteLength-1;
+        if(start>end||start>=bytes.byteLength)return new Response(null,{status:416,headers:{'Content-Range':`bytes */${bytes.byteLength}`}});
+        return new Response(bytes.slice(start,end+1),{status:206,headers:{'Content-Type':hit.headers.get('Content-Type')||'video/mp4','Content-Range':`bytes ${start}-${end}/${bytes.byteLength}`,'Content-Length':String(end-start+1),'Accept-Ranges':'bytes'}});
       }
-      return res;
-    }).catch(() => hit))
-  );
+      return hit;
+    }
+    try{
+      const response=await fetch(e.request);
+      if(response.status===200&&response.type==='basic')e.waitUntil(cache.put(e.request,response.clone()).catch(()=>{}));
+      return response;
+    }catch{
+      if(e.request.mode==='navigate'){const page=await cache.match('./index.html');if(page)return page;}
+      return new Response('Offline resource unavailable',{status:503,statusText:'Offline'});
+    }
+  })());
 });

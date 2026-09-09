@@ -7,3 +7,21 @@
 node_modules/
 .DS_Store
 Thumbs.db
+
+/.tools/
+/SQ_*.jpg
+/*.mov
+/SWC2026_ArenaBG.jpg
+/summon_critical.jpg
+/소환건물_컨셉.jpg
+/Zeratu Character Sheet
+
+# 루트의 원본 미디어와 소재 폴더는 로컬 참조용 (앱용 최적화본만 app/assets/에 둔다)
+/*.mp4
+/*.mp3
+/*.jpg
+/*.MP3
+/resource/
+/sound/
+/zeratu summon_34/
+/main looping_4/

@@ -1,0 +1,128 @@
+const {JSDOM}=require('../.tools/node_modules/jsdom');
+const fs=require('fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('app/index.html','utf8');
+const dom=new JSDOM(html,{url:'http://localhost/app/',runScripts:'outside-only',pretendToBeVisual:true});
+const w=dom.window;
+const evaluate=code=>require('node:vm').runInContext(code,dom.getInternalVMContext());
+w.indexedDB={open:()=>({})};w.matchMedia=()=>({matches:true});
+w.HTMLMediaElement.prototype.play=async()=>{};w.HTMLMediaElement.prototype.pause=()=>{};w.HTMLMediaElement.prototype.load=()=>{};
+w.HTMLElement.prototype.setPointerCapture=()=>{};w.confirm=()=>true;
+for(const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g))evaluate(m[1]);
+evaluate(fs.readFileSync('app/draw-engine.js','utf8'));
+evaluate(fs.readFileSync('app/scroll-audio.js','utf8'));
+evaluate(fs.readFileSync('app/figure.js','utf8'));
+evaluate("stock={ip1:[0,10]};cfg.figureWinPercent=10;cfg.muted=true;"); // participation only: these journeys must reach the result directly (figure wins are covered below)
+w.document.getElementById('idle-banner').click();
+assert.ok(w.document.getElementById('scr-scrolls').classList.contains('active'));
+assert.equal(w.document.querySelectorAll('.scroll-choice').length,12);
+w.chooseScroll(2);assert.equal(w.document.getElementById('scroll-next').disabled,false);
+w.openSelectedScroll();assert.ok(w.document.getElementById('scr-open').classList.contains('active'));
+assert.equal(w.document.getElementById('open-number').textContent,'3번 소환서');assert.ok(w.document.querySelector('#scr-open .drag-hint .drag-handle'));
+assert.equal(w.document.getElementById('idle-sub').textContent,'');assert.equal(w.document.querySelector('#scr-scrolls .title small'),null);
+const drag=w.document.getElementById('scroll-drag'),video=w.document.getElementById('scroll-video');
+Object.defineProperty(drag,'clientWidth',{value:400});Object.defineProperty(video,'duration',{value:4.066667});Object.defineProperty(video,'readyState',{value:4});
+evaluate('scrollSeekReady=true');
+const gesture=(type,x)=>{const event=new w.MouseEvent(type,{clientX:x,bubbles:true});Object.defineProperty(event,'pointerId',{value:1});drag.dispatchEvent(event);};
+gesture('pointerdown',20);gesture('pointermove',150);const forward=video.currentTime;
+assert.ok(Math.abs(forward-(video.duration-1/30)*.5)<.001);gesture('pointermove',85);assert.ok(video.currentTime<forward&&video.currentTime>0);
+gesture('pointercancel',85);assert.equal(video.currentTime,0);
+assert.equal(w.localStorage.getItem('figure-draw.draw-state.v1'),null);
+assert.equal(evaluate('scrollScrubbing'),false);
+console.log('PASS: scroll video follows forward/reverse drag; cancelled gesture resumes loop without drawing');
+assert.equal(drag.querySelector('.scroll-paper'),null);
+assert.ok(w.document.getElementById('scroll-idle-video').src.endsWith('sacred-idle.mp4'));
+assert.ok(video.src.endsWith('sacred-open.mp4'));
+gesture('pointerdown',20);assert.equal(video.currentTime,0);
+gesture('pointermove',220);gesture('pointerup',220); // 77% is no longer enough to commit.
+assert.equal(w.localStorage.getItem('figure-draw.draw-state.v1'),null);
+gesture('pointerdown',20);gesture('pointermove',280);
+assert.ok(Math.abs(video.currentTime-(video.duration-1/30))<.001); // Clamp, never wrap.
+assert.ok(Number(w.document.getElementById('scroll-whiteout').style.opacity)>.8);
+gesture('pointermove',20);assert.equal(video.currentTime,0);gesture('pointercancel',20);
+assert.equal(w.document.getElementById('scroll-whiteout').style.opacity,'0');
+w.revealScroll();w.revealScroll();
+assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log.length,1);
+assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log[0].drawMode,'stock');
+assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log[0].figureWinPercent,null);
+assert.ok(w.document.getElementById('scr-open').classList.contains('active'));
+assert.equal(evaluate('openingTimer'),null);
+video.dispatchEvent(new w.Event('error'));
+assert.equal(w.document.getElementById('scroll-open-btn').disabled,false);
+w.revealScroll();assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log.length,1);
+video.dispatchEvent(new w.Event('ended'));assert.ok(w.document.getElementById('scr-result').classList.contains('active'));
+assert.equal(w.document.getElementById('scroll-whiteout').style.opacity,'1');
+assert.match(w.document.getElementById('result-countdown').textContent,/5초/);
+w.resetToIdle();assert.ok(w.document.getElementById('scr-idle').classList.contains('active'));
+// Idle loop keeps the clip's own audio, following the admin mute switch; BGM ducks for the whole screen.
+const idleVideo=w.document.getElementById('scroll-idle-video');
+evaluate('cfg.muted=false;bgmEl.play.volume=.4');w.document.getElementById('idle-banner').click();w.chooseScroll(4);w.openSelectedScroll();
+assert.equal(idleVideo.muted,false);assert.equal(idleVideo.loop,true);assert.ok(Math.abs(evaluate('bgmEl.play.volume')-.1)<.001);
+evaluate('cfg.muted=true');w.startScrollLoop();assert.equal(idleVideo.muted,true);evaluate('cfg.muted=false');w.startScrollLoop();assert.equal(idleVideo.muted,false);
+// jsdom has no AudioContext, so the video track carries the idle sound; with Web Audio the track stays muted.
+assert.equal(evaluate('ScrollSound.loop(0,false)'),false);
+evaluate('ScrollSound.loop=()=>true');w.startScrollLoop();assert.equal(idleVideo.muted,true);evaluate('ScrollSound.loop=()=>false');w.startScrollLoop();assert.equal(idleVideo.muted,false);
+// A completed drag finishes the reveal directly: the open clip is never played from its last frame.
+let plays=0;video.play=async()=>{plays++;};
+gesture('pointerdown',20);gesture('pointermove',280);gesture('pointerup',280);
+assert.equal(plays,0);assert.ok(w.document.getElementById('scr-result').classList.contains('active'));
+assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log.length,2);
+assert.equal(w.document.getElementById('scroll-whiteout').style.opacity,'1');
+video.dispatchEvent(new w.Event('ended'));assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log.length,2);
+assert.ok(Math.abs(evaluate('bgmEl.play.volume')-.4)<.001);
+console.log('PASS: idle loop audio follows mute switch; completed drag reaches the result without replaying the open clip');
+w.resetToIdle();assert.ok(w.document.getElementById('scr-idle').classList.contains('active'));
+// Figure win: the full-screen summon clip (with sound) runs before the result screen; participation goes straight there.
+const stage=w.document.getElementById('summon-stage'),summon=w.document.getElementById('summon-video');
+let summonPlays=0;summon.play=async()=>{summonPlays++;};
+evaluate("var cues=[];ScrollSound.has=n=>n==='summon';ScrollSound.cue=(n,o)=>{cues.push([n,o]);return true;}");
+evaluate('stock={ip1:[1,0]}');w.document.getElementById('idle-banner').click();w.chooseScroll(0);w.openSelectedScroll();
+gesture('pointerdown',20);gesture('pointermove',280);gesture('pointerup',280);
+assert.equal(summonPlays,1);assert.ok(stage.classList.contains('active'));assert.equal(summon.muted,true); // Web Audio carries the sound
+Object.defineProperty(summon,'currentTime',{value:.4,configurable:true});summon.dispatchEvent(new w.Event('playing'));
+assert.deepEqual(evaluate('JSON.stringify(cues)'),'[["summon",0.4]]');
+assert.ok(w.document.getElementById('scr-open').classList.contains('active'));assert.equal(w.document.getElementById('scroll-whiteout').style.opacity,'1');
+w.resetToIdle();assert.ok(w.document.getElementById('scr-open').classList.contains('active')); // ignored while the summon plays
+summon.dispatchEvent(new w.Event('ended'));
+assert.ok(w.document.getElementById('scr-result').classList.contains('active'));assert.match(w.document.querySelector('#scr-result h2').textContent,/제라투/);
+assert.ok(stage.classList.contains('fading'));w.resetToIdle();assert.equal(stage.classList.contains('active'),false);assert.equal(stage.classList.contains('fading'),false);
+// Without Web Audio the summon video's own track is unmuted instead.
+evaluate("ScrollSound.has=()=>false");evaluate('stock={ip1:[1,0]}');w.document.getElementById('idle-banner').click();w.chooseScroll(2);w.openSelectedScroll();
+gesture('pointerdown',20);gesture('pointermove',280);gesture('pointerup',280);assert.equal(summon.muted,false);assert.equal(summonPlays,2);
+summon.dispatchEvent(new w.Event('ended'));w.resetToIdle();
+evaluate('stock={ip1:[0,3]}');w.document.getElementById('idle-banner').click();w.chooseScroll(1);w.openSelectedScroll();
+gesture('pointerdown',20);gesture('pointermove',280);gesture('pointerup',280);
+assert.equal(summonPlays,2);assert.ok(w.document.getElementById('scr-result').classList.contains('active'));assert.equal(stage.classList.contains('active'),false);
+console.log('PASS: figure win plays the summon clip before the result and cannot be interrupted; participation skips it');
+w.resetToIdle();assert.ok(w.document.getElementById('scr-idle').classList.contains('active'));
+w.renderAdmIps();assert.equal(w.document.querySelectorAll('.figure-admin-media').length,2);
+assert.match(w.document.getElementById('pane-ips').textContent,/피규어/);
+w.renderAdmSettings();assert.ok(w.document.getElementById('figure-percent'));
+assert.equal(w.document.getElementById('figure-probability-enabled').checked,false);
+assert.equal(w.document.getElementById('figure-percent').disabled,true);
+const unchanged=evaluate('JSON.stringify(stock)');
+w.document.getElementById('figure-probability-enabled').checked=true;w.updateFigureRuleInputs();
+assert.equal(w.document.getElementById('figure-percent').disabled,false);
+w.document.getElementById('figure-percent').value='23.5';w.saveFigureRules();
+assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.config.v1')).figureWinPercent,23.5);
+assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.config.v1')).figureProbabilityEnabled,true);
+w.document.getElementById('figure-probability-enabled').checked=false;w.updateFigureRuleInputs();w.saveFigureRules();
+assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.config.v1')).figureWinPercent,23.5);
+assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.config.v1')).figureProbabilityEnabled,false);
+evaluate('cfg=loadCfg()');w.renderAdmSettings();
+assert.equal(w.document.getElementById('figure-probability-enabled').checked,false);
+assert.equal(w.document.getElementById('figure-percent').value,'23.5');
+assert.equal(evaluate('JSON.stringify(stock)'),unchanged);
+// Missing switch in older settings must default to stock mode, even with a saved percent.
+evaluate('delete cfg.figureProbabilityEnabled');w.renderAdmSettings();
+assert.equal(w.document.getElementById('figure-probability-enabled').checked,false);
+w.document.getElementById('figure-probability-enabled').checked=true;w.updateFigureRuleInputs();
+w.document.getElementById('figure-percent').value='';w.saveFigureRules();
+assert.equal(evaluate('figureProbabilityEnabled()'),false);
+w.document.getElementById('figure-percent').value='50';
+const realSave=w.saveCfg;w.saveCfg=()=>false;w.saveFigureRules();w.saveCfg=realSave;
+assert.equal(evaluate('figureProbabilityEnabled()'),false);
+assert.equal(evaluate('figurePercent()'),23.5);
+console.log('PASS: mode toggle, stored percentage retention, reload, legacy defaults, invalid input and save failure rollback without inventory changes');
+console.log('PASS: actual DOM start/select/open/result/home journey, double-draw guard, five-second timer and admin probability/media controls');
+// Drain boot/media promise callbacks before disposing the document.
+setImmediate(()=>dom.window.close());

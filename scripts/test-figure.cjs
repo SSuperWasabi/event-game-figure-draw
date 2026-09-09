@@ -1,0 +1,49 @@
+const assert=require('node:assert/strict');
+const engineModule={exports:{}};
+new Function('module',require('node:fs').readFileSync('app/draw-engine.js','utf8'))(engineModule);
+const E=engineModule.exports.FigureDrawEngine;
+const ips=[{id:'a',prizes:[{name:'figure',kind:'figure'},{name:'gift',kind:'participation'},{name:'hidden',kind:'figure',hidden:true}]}];
+const stock={a:[2,8,20]};
+function rng(...values){return ()=>values.shift()??0;}
+let hit=E.draw(ips,stock,10,rng(.099,0));
+assert.equal(hit.kind,'figure');assert.deepEqual(hit.stock.a,[1,8,20]);assert.deepEqual(stock.a,[2,8,20]);
+assert.equal(E.draw(ips,stock,10,rng(.1,0)).kind,'participation');
+assert.equal(E.draw(ips,stock,0,rng(0,0)).kind,'participation');
+assert.equal(E.draw(ips,stock,100,rng(.999,.999)).kind,'figure');
+assert.equal(E.draw(ips,{a:[0,8,20]},10,rng(0,0)).kind,'participation');
+assert.equal(E.availability(ips,{a:[2,0,20]},10).ok,false);
+assert.equal(E.availability(ips,{a:[2,0,20]},100).ok,true);
+assert.equal(E.availability(ips,{a:[0,8,20]},100).ok,false);
+assert.equal(E.availability(ips,stock,NaN).ok,false);
+const bundles=[{id:'b',prizes:[{kind:'figure',subs:[{name:'one'},{name:'two'}]}]}];
+hit=E.draw(bundles,{b:[[1,3]]},100,rng(0,.25));assert.equal(hit.sub,1);assert.deepEqual(hit.stock.b,[[1,2]]);
+let counts={figure:0,participation:0};for(let i=0;i<1000;i++)counts[E.draw(ips,stock,17.5,rng(i/1000,.5)).kind]++;
+assert.deepEqual(counts,{figure:175,participation:825});
+console.log('PASS: probability boundaries, category exhaustion, hidden prizes, weighted bundles, immutable inventory');
+assert.equal(E.availability(ips,{a:[2,0,20]}).ok,true);
+assert.equal(E.availability(ips,{a:[0,8,20]}).ok,true);
+assert.equal(E.availability(ips,{a:[0,0,20]}).ok,false);
+assert.equal(E.draw(ips,stock,null,rng(.199)).kind,'figure');
+assert.equal(E.draw(ips,stock,null,rng(.2)).kind,'participation');
+assert.equal(E.draw(ips,{a:[2,0,20]},null,rng(.99)).kind,'figure');
+hit=E.draw(bundles,{b:[[1,3]]},null,rng(.25));assert.equal(hit.sub,1);
+let remaining=structuredClone(stock),awards={figure:0,participation:0};
+for(let i=0;i<10;i++){hit=E.draw(ips,remaining,null,rng(.4));remaining=hit.stock;awards[hit.kind]++;}
+assert.deepEqual(awards,{figure:2,participation:8});assert.deepEqual(remaining.a,[0,0,20]);
+assert.throws(()=>E.draw(ips,remaining),/소진/);
+console.log('PASS: default stock weighting, single-category continuation and full visible inventory depletion');
+
+const fs=require('fs'),vm=require('vm');
+const html=fs.readFileSync('app/index.html','utf8');
+const inline=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).join('\n');
+new vm.Script(inline);new vm.Script(fs.readFileSync('app/figure.js','utf8'));
+// Execute the real draw commit in isolation: failed persistence must not consume inventory.
+const src=fs.readFileSync('app/figure.js','utf8');
+const commit=src.slice(src.indexOf('function commitFigureDraw()'),src.indexOf('function revealScroll()'));
+const context={FigureDrawEngine:E,cfg:{ips},stock:structuredClone(stock),logArr:[],activeFigurePercent:()=>100,figureProbabilityEnabled:()=>true,nextSerial:()=>1,selectedScroll:3,K_STATE:'state',localStorage:{setItem(){throw Error('quota');}},curIp:null,lastResult:null};
+vm.createContext(context);vm.runInContext(commit,context);assert.throws(()=>context.commitFigureDraw(),/quota/);assert.deepEqual(context.stock,stock);assert.equal(context.logArr.length,0);assert.equal(context.lastResult,null);
+let written;context.localStorage.setItem=(k,v)=>{written=JSON.parse(v);};context.commitFigureDraw();assert.equal(written.stock.a[0],1);assert.equal(written.log.length,1);assert.equal(written.log[0].scrollNumber,4);assert.equal(context.lastResult.kind,'figure');
+console.log('PASS: atomic inventory/log commit and storage failure leaves draw untouched');
+const sw=fs.readFileSync('app/sw.js','utf8');const assets=[...sw.matchAll(/'\.\/([^']+)'/g)].map(m=>m[1].split('?')[0]);for(const asset of assets)assert.ok(fs.existsSync('app/'+asset),asset);
+assert.ok(html.includes('figure.js'));assert.ok(html.includes('scr-scrolls'));assert.ok(html.includes('scr-open'));
+console.log('PASS: script syntax, screen integration and precached asset paths');

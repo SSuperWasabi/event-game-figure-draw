@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 68" width="68" height="68" role="img" aria-label="오른쪽으로 밀기">
+  <defs>
+    <radialGradient id="face" cx="50%" cy="38%" r="70%">
+      <stop offset="0" stop-color="#9b6bf0"/>
+      <stop offset=".55" stop-color="#5a2fa8"/>
+      <stop offset="1" stop-color="#24113f"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff1b8"/>
+      <stop offset=".5" stop-color="#ffd463"/>
+      <stop offset="1" stop-color="#e59a1c"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset="1" stop-color="#ffe4a0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="34" cy="34" r="31" fill="url(#face)" stroke="url(#gold)" stroke-width="3"/>
+  <circle cx="34" cy="34" r="25.5" fill="none" stroke="#ffffff" stroke-opacity=".14" stroke-width="1.5"/>
+  <!-- ghost chevron for a sense of motion -->
+  <polyline points="20,23 31,34 20,45" fill="none" stroke="#ffe4a0" stroke-opacity=".38" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- main arrow -->
+  <path d="M24 34 H44" fill="none" stroke="url(#ink)" stroke-width="7" stroke-linecap="round"/>
+  <polyline points="36,22 48,34 36,46" fill="none" stroke="url(#ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
