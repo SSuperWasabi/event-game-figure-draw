@@ -24,6 +24,8 @@ function scrollMix(active){
 function scrollWhiteout(value,fade=false){const el=document.getElementById('scroll-whiteout');el.style.transition=fade?'opacity 400ms ease-out':'none';el.style.opacity=String(Math.max(0,Math.min(1,value)));}
 function updateScrollWhiteout(time){const duration=scrollVideo().duration;if(Number.isFinite(duration))scrollWhiteout((time-(duration-.3))/.3);}
 let scrollSeekReady=false,figureObjectUrls=[],scrollPlaybackFailed=false;
+let scrollPrepareTask=null,scrollAutoPending=false,scrollReadyTimer=null,scrollPrimeTask=null;
+const scrollSource=document.getElementById('scroll-video').getAttribute('src');
 // Figure win: the full-screen summon clip plays (with sound) before the result screen. Participation prizes skip it.
 let summonTimer=null,summonEpoch=-1,summonUnlocked=false,summonTrack=false;
 const summonStage=()=>document.getElementById('summon-stage'),summonVideos=()=>[document.getElementById('summon-video'),document.getElementById('summon-video-blur')];
@@ -59,10 +61,38 @@ async function prepareBlobVideo(ids){
   const url=URL.createObjectURL(await response.blob());figureObjectUrls.push(url);
   ids.forEach(id=>{const v=document.getElementById(id);v.src=url;v.load();});
 }
-async function prepareScrollVideo(){try{await prepareBlobVideo(['scroll-video']);scrollSeekReady=true;}catch{toast('소환 영상을 불러오지 못했습니다. 화면을 새로고침해주세요');}}
+function prepareScrollVideo(){
+  if(scrollPrepareTask)return scrollPrepareTask;
+  scrollPrepareTask=(async()=>{
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);
+    try{
+      const response=await fetch(scrollSource,{signal:controller.signal});if(!response.ok)throw Error('영상 다운로드 실패');
+      const blob=await response.blob(),v=scrollVideo();
+      // Never replace a source under a gesture or an automatic reveal.
+      if(!scrollScrubbing&&!drawing){const url=URL.createObjectURL(blob);figureObjectUrls.push(url);v.src=url;v.load();}
+    }catch(error){console.warn('Scroll download: using original video URL',error);}
+    finally{clearTimeout(timer);scrollPrepareTask=null;}
+  })();
+  return scrollPrepareTask;
+}
+function scrollHasMetadata(){const v=scrollVideo();return Number.isFinite(v.duration)&&v.duration>0&&v.readyState>=1;}
+function primeScrollVideo(){
+  const v=scrollVideo();if(scrollPrimeTask||drawing)return;
+  if(v.error){v.src=scrollSource;v.load();}
+  v.muted=true;
+  // Invoke play inside the gesture, even when preload has not decoded a frame.
+  scrollPrimeTask=v.play().then(()=>{if(!drawing){v.pause();if(scrollScrubbing){setScrollProgress(Number(document.getElementById('scroll-drag').style.getPropertyValue('--progress'))||0);}}})
+    .catch(error=>console.warn('Scroll preparation playback failed',error)).finally(()=>{scrollPrimeTask=null;});
+}
+function cancelScrollWait(){scrollAutoPending=false;clearTimeout(scrollReadyTimer);scrollReadyTimer=null;}
+function waitForScroll(){
+  clearTimeout(scrollReadyTimer);
+  scrollReadyTimer=setTimeout(()=>{if(currentScreen!=='scr-open'||drawing)return;cancelScrollWait();startScrollLoop();toast('영상을 재생하지 못했습니다. 소환서를 다시 터치하거나 자동 오픈을 눌러주세요');},12000);
+}
 if(typeof fetch==='function'){prepareScrollVideo();prepareBlobVideo(['summon-video','summon-video-blur']).catch(()=>{ /* Progressive playback from the original URL remains. */ });}
 window.addEventListener('pagehide',e=>{if(!e.persisted){figureObjectUrls.forEach(url=>URL.revokeObjectURL(url));figureObjectUrls=[];}});
 function startScrollLoop(){
+  cancelScrollWait();
   ScrollSound.stop();scrollMix(currentScreen==='scr-open');scrollWhiteout(0);
   scrollScrubbing=false;scrollSeekTarget=null;scrollVideo().pause();
   document.getElementById('scroll-drag').classList.remove('scrubbing');
@@ -71,11 +101,16 @@ function startScrollLoop(){
   const v=document.getElementById('scroll-idle-video');v.loop=true;v.volume=1;
   const bed=currentScreen==='scr-open'&&ScrollSound.loop(v.currentTime,!!cfg.muted);
   v.muted=bed||!!cfg.muted;
-  if(currentScreen==='scr-open')v.play().catch(()=>{});
+  if(currentScreen==='scr-open')v.play().catch(error=>{
+    console.warn('Scroll idle playback failed; retrying muted',error);
+    if(currentScreen!=='scr-open'||scrollScrubbing)return;
+    v.muted=true;if(v.error)v.load();
+    v.play().catch(error=>console.warn('Scroll idle retry failed',error));
+  });
 }
 function beginScrollScrub(){
   const v=scrollVideo();
-  if(!scrollSeekReady||!Number.isFinite(v.duration)||v.duration<=0||v.readyState<2){toast('소환 영상을 불러오는 중입니다. 잠시 후 다시 시도해주세요');return false;}
+  if(!scrollHasMetadata()){primeScrollVideo();waitForScroll();}
   document.getElementById('scroll-idle-video').pause();v.pause();v.muted=true;v.loop=false;scrollScrubbing=true;ScrollSound.begin();scrollMix(true);
   document.getElementById('scroll-drag').classList.add('scrubbing');setScrollProgress(0);return true;
 }
@@ -85,7 +120,15 @@ function flushScrollSeek(){
   try{v.currentTime=target;}catch{scrollSeekTarget=target;}
 }
 scrollVideo().addEventListener('seeked',flushScrollSeek);
-scrollVideo().addEventListener('loadedmetadata',()=>{if(scrollScrubbing)setScrollProgress(Number(document.getElementById('scroll-drag').style.getPropertyValue('--progress'))||0);});
+function scrollMediaReady(){
+  scrollSeekReady=scrollHasMetadata();if(!scrollSeekReady)return;
+  clearTimeout(scrollReadyTimer);scrollReadyTimer=null;
+  if(scrollScrubbing)setScrollProgress(Number(document.getElementById('scroll-drag').style.getPropertyValue('--progress'))||0);
+  if(scrollAutoPending&&currentScreen==='scr-open'&&!drawing){cancelScrollWait();revealScroll();}
+}
+scrollVideo().addEventListener('loadedmetadata',scrollMediaReady);
+scrollVideo().addEventListener('loadeddata',scrollMediaReady);
+scrollVideo().addEventListener('canplay',scrollMediaReady);
 // Shared ending for both paths: fully white, result screen underneath, then the white lifts.
 function finishScrollReveal(){
   ScrollSound.stop();scrollScrubbing=false;scrollSeekTarget=null;scrollVideo().pause();scrollWhiteout(1);clearTimeout(openingTimer);
@@ -108,6 +151,7 @@ function playOpeningVideo(){
   v.loop=false;v.play().catch(scrollPlaybackError);
 }
 go = function(id){
+  if(id!=='scr-open')cancelScrollWait();
   figureBase.go(id);
   if(id==='scr-open')startScrollLoop();else{ScrollSound.stop();scrollMix(false);scrollScrubbing=false;scrollSeekTarget=null;scrollVideo().pause();document.getElementById('scroll-idle-video').pause();if(id!=='scr-result'){cancelAnimationFrame(whiteoutFrame);scrollWhiteout(0);}}
   for(const key of ['idle-video','idle-video-blur']){const v=document.getElementById(key);if(id==='scr-idle'&&v.getAttribute('src')&&v.style.display!=='none')v.play().catch(()=>{});else v.pause();}
@@ -146,7 +190,7 @@ function openSelectedScroll(){
   document.getElementById('scroll-open-btn').textContent='소환서 자동 오픈';scrollPlaybackFailed=false;
   document.getElementById('open-back').disabled=false;
   document.getElementById('open-number').textContent=`${selectedScroll+1}번 소환서`;
-  summonUnlock();startBgm('play');go('scr-open');
+  summonUnlock();primeScrollVideo();startBgm('play');go('scr-open');
 }
 function setScrollProgress(value){
   document.getElementById('scroll-drag').style.setProperty('--progress',value);
@@ -187,12 +231,15 @@ function revealScroll(){
   if(currentScreen!=='scr-open')return;
   if(drawing){if(scrollPlaybackFailed)playOpeningVideo();return;}
   if(!scrollScrubbing&&!beginScrollScrub())return;
+  if(!scrollHasMetadata()){scrollAutoPending=true;primeScrollVideo();waitForScroll();return;}
+  cancelScrollWait();
   if(commitScrollDraw())playOpeningVideo();
 }
 // Completed drag: the paper is already open on screen, so finish directly. Never call play() from the last
 // frame: browsers that clamp that seek to `duration` would restart the open clip from its first frame.
 function completeScrollDrag(){
   if(currentScreen!=='scr-open'||drawing||!scrollScrubbing)return;
+  if(!scrollHasMetadata()){startScrollLoop();return;}
   if(commitScrollDraw())finishScrollReveal();
 }
 // Progressive left-to-right drag; incomplete and cancelled gestures never draw.
