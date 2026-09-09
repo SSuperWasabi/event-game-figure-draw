@@ -86,7 +86,7 @@ function prepareScrollVideo(){
   return scrollPrepareTask;
 }
 function scrollHasMetadata(){const v=scrollVideo();return Number.isFinite(v.duration)&&v.duration>0&&v.readyState>=1;}
-function scrollHasFrame(){return scrollHasMetadata()&&scrollVideo().readyState>=2&&!scrollVideo().error;}
+function scrollHasFrame(){return scrollHasMetadata()&&scrollVideo().readyState>=2&&!scrollVideo().seeking&&!scrollVideo().error;}
 function primeScrollVideo(){
   const v=scrollVideo();if(scrollPrimeTask||drawing)return;
   const epoch=++scrollPrimeEpoch;
@@ -125,9 +125,10 @@ function beginScrollScrub(){
   const v=scrollVideo();
   v.pause();v.muted=true;v.loop=false;scrollScrubbing=true;ScrollSound.begin();scrollMix(true);
   const box=document.getElementById('scroll-drag');
-  box.classList.toggle('video-ready',scrollHasFrame());box.classList.add('scrubbing');setScrollProgress(0);
-  if(scrollHasFrame())document.getElementById('scroll-idle-video').pause();
-  else{waitForScroll();primeScrollVideo();}
+  // Hide the previous decoded frame BEFORE requesting the rewind. Seeking is asynchronous.
+  box.classList.remove('video-ready');box.classList.add('scrubbing');setScrollProgress(0);
+  if(scrollHasFrame()){box.classList.add('video-ready');document.getElementById('scroll-idle-video').pause();}
+  else{waitForScroll();if(!v.seeking)primeScrollVideo();}
   return true;
 }
 function flushScrollSeek(){
@@ -138,8 +139,8 @@ function flushScrollSeek(){
 }
 scrollVideo().addEventListener('seeked',flushScrollSeek);
 function scrollMediaReady(){
-  scrollSeekReady=scrollHasFrame();
   if(scrollScrubbing&&!scrollAutoPending&&scrollHasMetadata())setScrollProgress(Number(document.getElementById('scroll-drag').style.getPropertyValue('--progress'))||0);
+  scrollSeekReady=scrollHasFrame();
   if(!scrollSeekReady)return;
   clearTimeout(scrollReadyTimer);scrollReadyTimer=null;
   if(scrollScrubbing){document.getElementById('scroll-drag').classList.add('video-ready');document.getElementById('scroll-idle-video').pause();}
@@ -252,7 +253,7 @@ function revealScroll(){
   if(currentScreen!=='scr-open')return;
   if(drawing){if(scrollPlaybackFailed)playOpeningVideo();return;}
   if(!scrollScrubbing&&!beginScrollScrub())return;
-  if(!scrollHasFrame()){scrollAutoPending=true;primeScrollVideo();waitForScroll();return;}
+  if(!scrollHasFrame()){scrollAutoPending=true;if(!scrollVideo().seeking)primeScrollVideo();waitForScroll();return;}
   cancelScrollWait();
   if(commitScrollDraw())playOpeningVideo();
 }

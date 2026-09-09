@@ -23,6 +23,19 @@ const drag=w.document.getElementById('scroll-drag'),video=w.document.getElementB
 Object.defineProperty(drag,'clientWidth',{value:400});Object.defineProperty(video,'duration',{value:4.066667,configurable:true});Object.defineProperty(video,'readyState',{value:4,configurable:true});
 evaluate('scrollSeekReady=true');
 const gesture=(type,x)=>{const event=new w.MouseEvent(type,{clientX:x,bubbles:true});Object.defineProperty(event,'pointerId',{value:1});drag.dispatchEvent(event);};
+// A decoder can retain the previous final frame while currentTime=0 starts an asynchronous seek.
+let rewindPending=false,decodedPosition=video.duration;
+Object.defineProperty(video,'currentTime',{configurable:true,get:()=>decodedPosition,set:value=>{decodedPosition=value;rewindPending=true;}});
+Object.defineProperty(video,'seeking',{configurable:true,get:()=>rewindPending});
+w.revealScroll();
+assert.equal(rewindPending,true);assert.equal(drag.classList.contains('video-ready'),false);
+assert.equal(w.localStorage.getItem('figure-draw.draw-state.v1'),null);
+video.dispatchEvent(new w.Event('loadeddata'));
+assert.equal(drag.classList.contains('video-ready'),false,'readyState alone must not expose the stale final frame');
+w.go('scr-scrolls');rewindPending=false;video.dispatchEvent(new w.Event('seeked'));
+assert.equal(w.localStorage.getItem('figure-draw.draw-state.v1'),null);
+delete video.currentTime;delete video.seeking;w.openSelectedScroll();
+console.log('PASS: pending rewind hides the previous final frame even with readyState=4');
 // iPad may have no decoded frame before the first gesture. Keep input and do not draw early.
 Object.defineProperty(video,'duration',{value:NaN,configurable:true});Object.defineProperty(video,'readyState',{value:0,configurable:true});
 evaluate('scrollSeekReady=false');
