@@ -1,11 +1,20 @@
 /* Figure Draw participant journey. v31 admin/media/backup remains the base. */
 let selectedScroll=null, openingFrame=0, openingTimer=null, resultTick=null, resultDeadline=0;
 let figureMediaUrls=[], figurePopup=null, figureEpoch=0;
-const figureBase={renderAdmIps,renderAdmSettings,renderResult,resetToIdle,bootIdle,go};
+const figureBase={renderAdmIps,renderAdmSettings,renderResult,resetToIdle,bootIdle,go,startBgm};
 const figurePercent=()=>Number(cfg.figureWinPercent??10);
 const figureProbabilityEnabled=()=>cfg.figureProbabilityEnabled===true;
 const activeFigurePercent=()=>figureProbabilityEnabled()?figurePercent():null;
 let scrollScrubbing=false,scrollSeekTarget=null;
+// BGM: optional single-track mode keeps one slot looping across screens. It never touches volume, so the
+// 25% ducking on the scroll screen (scrollMix) and the admin mute keep working exactly as before.
+const BGM_SLOTS=['idle','select','play'];
+const bgmSingle=()=>cfg.bgmMode==='single';
+const bgmSingleSlot=()=>BGM_SLOTS.includes(cfg.bgmSingleSlot)?cfg.bgmSingleSlot:'idle';
+startBgm=function(slot){
+  if(bgmSingle()){slot=bgmSingleSlot();const a=bgmEl[slot];if(curBgm===slot&&a&&a.src&&!a.paused&&!cfg.muted)return;}
+  figureBase.startBgm(slot);
+};
 const scrollVideo=()=>document.getElementById('scroll-video');
 let scrollBgmVolumes=null,whiteoutFrame=0;
 function scrollMix(active){
@@ -265,7 +274,21 @@ renderAdmSettings = function(){
   card.innerHTML=`<h4>피규어 드로우</h4><div class="adm-row"><label for="figure-probability-enabled">피규어 당첨 확률 사용</label><input id="figure-probability-enabled" type="checkbox" role="switch" ${figureProbabilityEnabled()?'checked':''} onchange="updateFigureRuleInputs()" style="flex:none;width:24px;height:24px"></div><div class="adm-row"><label for="figure-percent">피규어 확률 (%)</label><input id="figure-percent" type="number" min="0" max="100" step="any" value="${figurePercent()}" ${figureProbabilityEnabled()?'':'disabled'}></div><p id="figure-mode-note" class="figure-rule-note" aria-live="polite"></p><p class="figure-rule-note">소환서 번호는 확률에 영향을 주지 않습니다. 결과는 무입력 5초 후 복귀합니다. 변경 후 저장 버튼을 눌러 적용하세요.</p><button class="adm-btn pri" onclick="saveFigureRules()">추첨 방식 저장</button>`;root.prepend(card);updateFigureRuleInputs();
   ['set-cool','set-drawidle'].forEach(id=>{const el=document.getElementById(id);el.disabled=true;el.title='피규어 드로우에서는 사용하지 않는 기존 쿠지 설정';});
   root.querySelector('button[onclick="toggleLineup()"]').disabled=true;
+  // BGM playback mode lives inside the existing BGM card.
+  const bgmHead=[...root.querySelectorAll('.adm-card h4')].find(h=>h.textContent.startsWith('배경음악'));
+  if(bgmHead){const box=document.createElement('div');box.className='figure-bgm-mode';
+    box.innerHTML=`<div class="adm-row"><label for="bgm-mode">재생 방식</label><select id="bgm-mode" onchange="saveBgmMode()"><option value="screen" ${bgmSingle()?'':'selected'}>화면별 전환</option><option value="single" ${bgmSingle()?'selected':''}>한 곡 연속 루핑</option></select></div><div class="adm-row"><label for="bgm-single-slot">연속 재생 곡</label><select id="bgm-single-slot" onchange="saveBgmMode()" ${bgmSingle()?'':'disabled'}>${BGM_SLOTS.map(s=>`<option value="${s}" ${bgmSingleSlot()===s?'selected':''}>${{idle:'대기',select:'선택',play:'뽑기'}[s]} 슬롯</option>`).join('')}</select></div><p class="figure-rule-note">한 곡 연속 루핑이면 화면이 바뀌어도 선택한 슬롯의 곡이 끊기지 않고 이어집니다. 소환서 화면과 개봉 연출 중 BGM 볼륨 자동 감소(25%)와 음소거는 그대로 적용됩니다. 선택한 슬롯에 업로드된 곡이 없으면 무음입니다.</p>`;
+    bgmHead.parentElement.appendChild(box);}
   const note=document.createElement('p');note.className='figure-rule-note';note.textContent='소환서 선택 → 드래그 개봉 → 결과 흐름을 사용합니다. 기존 라인업·NPC·쿨다운 설정은 보존되지만 이 흐름에는 적용하지 않습니다. 대기 영상과 BGM·효과음은 그대로 사용할 수 있습니다.';card.appendChild(note);
+}
+function saveBgmMode(){
+  const mode=document.getElementById('bgm-mode').value,slot=document.getElementById('bgm-single-slot').value;
+  const old={mode:cfg.bgmMode,slot:cfg.bgmSingleSlot};
+  cfg.bgmMode=mode==='single'?'single':'screen';if(BGM_SLOTS.includes(slot))cfg.bgmSingleSlot=slot;
+  if(!saveCfg()){cfg.bgmMode=old.mode;cfg.bgmSingleSlot=old.slot;toast('설정 저장 실패');renderAdmSettings();return;}
+  document.getElementById('bgm-single-slot').disabled=!bgmSingle();
+  if(curBgm)figureBase.startBgm(bgmSingle()?bgmSingleSlot():curBgm); // apply immediately (admin is reached from the idle screen)
+  toast(bgmSingle()?'한 곡 연속 루핑으로 저장됨':'화면별 전환으로 저장됨');
 }
 function updateFigureRuleInputs(){
   const enabled=document.getElementById('figure-probability-enabled').checked;

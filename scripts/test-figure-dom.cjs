@@ -93,6 +93,19 @@ evaluate('stock={ip1:[0,3]}');w.document.getElementById('idle-banner').click();w
 gesture('pointerdown',20);gesture('pointermove',280);gesture('pointerup',280);
 assert.equal(summonPlays,2);assert.ok(w.document.getElementById('scr-result').classList.contains('active'));assert.equal(stage.classList.contains('active'),false);
 console.log('PASS: figure win plays the summon clip before the result and cannot be interrupted; participation skips it');
+// Single-track BGM: the chosen slot keeps looping across screen changes without restarts or volume resets; per-screen mode switches slots.
+const bgm=evaluate('bgmEl'),bgmCalls={};
+for(const k of ['idle','select','play']){bgmCalls[k]={play:0,pause:0};bgm[k].play=async()=>{bgmCalls[k].play++;Object.defineProperty(bgm[k],'paused',{value:false,configurable:true});};bgm[k].pause=()=>{bgmCalls[k].pause++;Object.defineProperty(bgm[k],'paused',{value:true,configurable:true});};}
+evaluate("cfg.bgmMode='single';cfg.bgmSingleSlot='idle';cfg.muted=false;bgmEl.idle.src='blob:idle';bgmEl.play.src='blob:play';");
+w.startBgm('idle');w.startBgm('select');w.startBgm('play');
+assert.deepEqual([bgmCalls.idle.play,bgmCalls.idle.pause,bgmCalls.play.play],[1,0,0]);assert.equal(evaluate('curBgm'),'idle');
+bgm.idle.volume=.1;w.startBgm('play');assert.equal(bgm.idle.volume,.1); // a ducked volume survives screen changes
+evaluate("cfg.bgmMode='screen'");w.startBgm('play');assert.deepEqual([bgmCalls.idle.pause,bgmCalls.play.play],[1,1]);
+w.renderAdmSettings();assert.equal(w.document.getElementById('bgm-mode').value,'screen');assert.equal(w.document.getElementById('bgm-single-slot').disabled,true);
+w.document.getElementById('bgm-mode').value='single';w.document.getElementById('bgm-single-slot').value='play';w.saveBgmMode();
+assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.config.v1')).bgmMode,'single');assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.config.v1')).bgmSingleSlot,'play');
+assert.equal(w.document.getElementById('bgm-single-slot').disabled,false);evaluate("cfg.bgmMode='screen'");
+console.log('PASS: single-track BGM keeps one slot looping across screens, leaves ducked volume alone, and the admin controls persist the mode');
 w.resetToIdle();assert.ok(w.document.getElementById('scr-idle').classList.contains('active'));
 w.renderAdmIps();assert.equal(w.document.querySelectorAll('.figure-admin-media').length,2);
 assert.match(w.document.getElementById('pane-ips').textContent,/피규어/);

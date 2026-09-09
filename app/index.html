@@ -535,12 +535,12 @@
 /* ════════════════ 저장소 키 ════════════════ */
 const K_CFG='figure-draw.config.v1', K_STOCK='figure-draw.stock.v1', K_LOG='figure-draw.log.v1', K_COOL='figure-draw.cooldown.v1';
 const K_STATE='figure-draw.draw-state.v1';
-const APP_VER='figure-v7';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
+const APP_VER='figure-v8';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
 
 /* ════════════════ 기본 설정 (관리자 미설정 시) ════════════════ */
 function defaultConfig(){
   return {
-    eventName:'제라투 피규어 드로우', figureProbabilityEnabled:false, figureWinPercent:10, adminPin:'0000', idleTimeoutSec:30, muted:false, npcs:[], idleVideos:[], cooldownMin:15,
+    eventName:'제라투 피규어 드로우', figureProbabilityEnabled:false, figureWinPercent:10, bgmMode:'screen', bgmSingleSlot:'idle', adminPin:'0000', idleTimeoutSec:30, muted:false, npcs:[], idleVideos:[], cooldownMin:15,
     showLineup:true,   // S3 경품 라인업 표시 (false = S1/S2 → 뽑기 직행)
     drawIdleSec:5,     // S4 뽑기 전 무입력 복귀(초, 0=끔) — 뽑기 확정 후에는 미적용
     ips:[{
@@ -1374,7 +1374,7 @@ function renderAdmSettings(){
     <div class="adm-row" style="margin-top:8px"><button class="adm-btn sec" onclick="addNpc('image/*','image')">+ 이미지 추가</button><button class="adm-btn sec" onclick="addNpc('video/*','video')">+ 영상 추가</button></div>
     <div class="muted-note">뽑기 화면마다 랜덤으로 하나 표시 · 영상은 무음 루핑 · 이미지 8MB / 영상 60MB</div>
   </div>
-  <div class="adm-card"><h4>배경음악 (BGM · 화면별 루핑)</h4>
+  <div class="adm-card"><h4>배경음악 (BGM · 루핑)</h4>
     <div class="adm-row"><label>대기</label><button class="adm-btn sec" onclick="uploadMedia('bgm_idle','audio/*')">업로드</button><button class="adm-btn dng" onclick="delMedia('bgm_idle')">삭제</button></div>
     <div class="adm-row"><label>선택</label><button class="adm-btn sec" onclick="uploadMedia('bgm_select','audio/*')">업로드</button><button class="adm-btn dng" onclick="delMedia('bgm_select')">삭제</button></div>
     <div class="adm-row"><label>뽑기</label><button class="adm-btn sec" onclick="uploadMedia('bgm_play','audio/*')">업로드</button><button class="adm-btn dng" onclick="delMedia('bgm_play')">삭제</button></div>
