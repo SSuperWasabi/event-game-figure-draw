@@ -61,6 +61,12 @@
 - 구현: `startBgm`을 figure.js에서 감싸 연속 모드면 어떤 슬롯 요청이든 고른 슬롯으로 바꾸고, 이미 그 슬롯이 재생 중이면 아무것도 하지 않는다(재시작·볼륨 초기화 없음). 그래서 `scrollMix`의 25% 덕킹·복귀와 음소거가 그대로 동작한다.
 - 검사: DOM 테스트에 연속 모드에서 슬롯 유지·덕킹 볼륨 유지·화면별 모드 전환·관리자 컨트롤 저장을 추가. 버전 figure-v8 / figure-draw-v8.
 
+### 9. iPad 메인 화면 영상 배치 깨짐 대응, 아레나 배경 제거 (2026-09-10)
+
+- 보고: iPad에서 대기 영상이 좌상단에 원본 크기로 그려지고, 뒤에 아레나 배경이 남아 보임(업로드 영상은 1080×1440 HEVC, 회전 태그 없음).
+- 조치: 메인 화면의 아레나 배경 이미지와 기본 루프 영상(`idle.mp4`)을 제거해 업로드 영상만 쓴다. 블러 배경은 `<video>`에 `filter`를 거는 대신 사본 영상 위에 `backdrop-filter` 베일(`#idle-video-veil`, `#summon-veil`)을 얹는 방식으로 바꿨다(iOS Safari에서 filter가 걸린 video는 object-fit이 무시될 수 있음). 사본 영상은 영상 비율이 화면과 3% 이상 다를 때만 표시·재생하고(`syncIdleBackdrop`, `loadedmetadata`/`resize`), 3:4 iPad에 3:4 영상이면 디코딩 1개만 쓴다. `#idle-video`는 `top/left/right/bottom` 명시 + `object-fit:contain`. 버전 figure-v9 / figure-draw-v9.
+- iPad 실기 확인은 아직 못 했다. 재현되면 iPadOS 버전과 업로드한 영상 파일을 확인한다.
+
 ### 남은 확인·후속 과제
 
 - 실제 iPad에서 터치 드래그, Web Audio 사운드(무음 모드 스위치 영향), 자동 오픈 경로의 소환 클립 사운드, 두 1080p 영상(클립 + 블러 배경) 동시 디코딩 부하 확인. 부하가 크면 블러 배경용 저해상도 변환본을 따로 두는 방법이 있다.

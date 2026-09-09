@@ -157,7 +157,7 @@
   /* 미세 그레인 — 밴딩 제거·질감 */
   #scr-idle::after { content:""; position:absolute; inset:0; z-index:1; pointer-events:none; opacity:.05; mix-blend-mode:overlay;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:120px 120px; }
-  #scr-idle > *:not(#idle-video):not(#idle-video-blur):not(.bubbles):not(.idle-sparkles):not(#admin-tap) { position:relative; z-index:3; }
+  #scr-idle > *:not(#idle-video):not(#idle-video-blur):not(#idle-video-veil):not(.bubbles):not(.idle-sparkles):not(#admin-tap) { position:relative; z-index:3; }
   #scr-idle .touch-banner { position:relative; overflow:hidden; background:var(--grad-lucky); border:1px solid rgba(255,255,255,.5); color:var(--gold-ink); font-size:18px; font-weight:800; padding:15px 38px; border-radius:var(--r-pill); text-shadow:0 1px 1px rgba(255,255,255,.35); animation:pulse 1.6s infinite; }
   #scr-idle .touch-banner::after { content:""; position:absolute; top:0; left:-65%; width:55%; height:100%; pointer-events:none; background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent); animation:bannerShimmer 3.4s ease-in-out infinite; }
   @keyframes bannerShimmer { 0%{left:-65%} 55%,100%{left:135%} }
@@ -379,6 +379,7 @@
   <!-- S1 대기 -->
   <div class="screen active" id="scr-idle">
     <video id="idle-video-blur" muted loop playsinline aria-hidden="true" tabindex="-1" style="display:none"></video>
+    <div id="idle-video-veil" aria-hidden="true" style="display:none"></div>
     <video id="idle-video" muted loop playsinline autoplay style="display:none"></video>
     <div class="bubbles" id="bubbles"></div>
     <div class="idle-sparkles">
@@ -535,7 +536,7 @@
 /* ════════════════ 저장소 키 ════════════════ */
 const K_CFG='figure-draw.config.v1', K_STOCK='figure-draw.stock.v1', K_LOG='figure-draw.log.v1', K_COOL='figure-draw.cooldown.v1';
 const K_STATE='figure-draw.draw-state.v1';
-const APP_VER='figure-v8';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
+const APP_VER='figure-v9';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
 
 /* ════════════════ 기본 설정 (관리자 미설정 시) ════════════════ */
 function defaultConfig(){
@@ -693,12 +694,20 @@ async function playIdleVideo(){
   }
   if(epoch!==idleMediaEpoch)return;
   if(blob){ try{ let src; if(typeof blob==='string'){ src=blob; } else { const b=mediaBlob(blob); if(!b) throw 0; src=v._ourl=URL.createObjectURL(b); } v.src=src; v.style.display='block'; v.play().catch(()=>{}); }catch(e){ v.style.display='none'; } }
-  else { v.src='assets/figure/idle.mp4'; v.style.display='block'; v.play().catch(()=>{}); }
-  if(v.style.display!=='none'){
-    background.src=v.src;background.style.display='block';
-    if(currentScreen==='scr-idle')background.play().catch(()=>{});else v.pause();
-  }else background.style.display='none';
+  else { v.removeAttribute('src'); v.style.display='none'; }
+  if(v.style.display!=='none'){ background.src=v.src; if(currentScreen!=='scr-idle')v.pause(); }
+  syncIdleBackdrop();
 }
+/* Idle backdrop: an enlarged copy of the same video is shown only when the video's aspect differs from the stage,
+   and it is blurred by a backdrop-filter veil instead of a filter on the video (a filtered <video> loses object-fit on iOS Safari). */
+function syncIdleBackdrop(){
+  const v=document.getElementById('idle-video'),b=document.getElementById('idle-video-blur'),veil=document.getElementById('idle-video-veil');
+  const need=v.style.display!=='none'&&v.videoWidth>0&&v.clientWidth>0&&Math.abs(v.videoWidth/v.videoHeight-v.clientWidth/v.clientHeight)>.03;
+  b.style.display=veil.style.display=need?'block':'none';
+  if(need){ if(currentScreen==='scr-idle'&&b.paused) b.play().catch(()=>{}); } else { try{b.pause();}catch(e){} }
+}
+document.getElementById('idle-video').addEventListener('loadedmetadata',syncIdleBackdrop);
+window.addEventListener('resize',()=>{ if(document.getElementById('idle-video').style.display!=='none') syncIdleBackdrop(); });
 async function bootIdle(){
   await playIdleVideo();
   refreshIdleSoldout();
@@ -1541,6 +1550,7 @@ document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
 <script src="draw-engine.js"></script>
 <div id="summon-stage" aria-hidden="true">
   <video id="summon-video-blur" src="assets/figure/zeratu-summon.mp4" muted playsinline preload="auto" tabindex="-1"></video>
+  <div id="summon-veil" aria-hidden="true"></div>
   <video id="summon-video" src="assets/figure/zeratu-summon.mp4" poster="assets/figure/zeratu-summon.jpg" playsinline preload="auto" tabindex="-1"></video>
 </div>
 <div id="scroll-whiteout" aria-hidden="true"></div>

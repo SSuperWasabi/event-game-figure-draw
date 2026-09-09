@@ -110,11 +110,11 @@ function playOpeningVideo(){
 go = function(id){
   figureBase.go(id);
   if(id==='scr-open')startScrollLoop();else{ScrollSound.stop();scrollMix(false);scrollScrubbing=false;scrollSeekTarget=null;scrollVideo().pause();document.getElementById('scroll-idle-video').pause();if(id!=='scr-result'){cancelAnimationFrame(whiteoutFrame);scrollWhiteout(0);}}
-  for(const key of ['idle-video','idle-video-blur']){const v=document.getElementById(key);if(id==='scr-idle'&&v.getAttribute('src'))v.play().catch(()=>{});else v.pause();}
+  for(const key of ['idle-video','idle-video-blur']){const v=document.getElementById(key);if(id==='scr-idle'&&v.getAttribute('src')&&v.style.display!=='none')v.play().catch(()=>{});else v.pause();}
 };
 document.getElementById('idle-video').addEventListener('timeupdate',()=>{
   const foreground=document.getElementById('idle-video'),background=document.getElementById('idle-video-blur');
-  if(currentScreen==='scr-idle'&&background.readyState>=2&&Math.abs(foreground.currentTime-background.currentTime)>.25){try{background.currentTime=foreground.currentTime;}catch{}}
+  if(currentScreen==='scr-idle'&&background.style.display!=='none'&&background.readyState>=2&&Math.abs(foreground.currentTime-background.currentTime)>.25){try{background.currentTime=foreground.currentTime;}catch{}}
 });
 
 function figureAvailable(){return FigureDrawEngine.availability(cfg.ips,stock,activeFigurePercent());}
