@@ -1,5 +1,12 @@
 # 작업 일지
 
+## 2026-09-10 — figure-v13 iPad BGM 감소 및 효과음 복구
+
+- 기존 감소는 HTMLMediaElement.volume 저장/복원에 의존했다. iOS에서 이 속성의 제어가 제한되며 startBgm 재호출은 0.4로 덮어써 감소 상태를 잃을 수 있었다. BGM을 GainNode에 연결하고 감소 상태를 별도로 관리한다.
+- 소환서 전용 컨텍스트와 효과음 컨텍스트를 공유하도록 변경했다. 사용자 touchend/pointerup/click/keydown에서 활성화하며 효과음은 running 외 상태에서 resume 완료 후 실행한다. 실제 iPad 효과음 실패의 정확한 상태 로그는 아직 없으므로 interrupted 처리는 확인된 코드 누락의 보완이다.
+- volume 쓰기를 무시하는 모의 환경에서 gain=0.1 유지, 반복 시작/음소거 해제/복원, interrupted 효과음 재생을 검사했다. Chrome 실제 오디오 RMS는 정상 0.13868 → 감소 0.03455(약 24.9%) → 복원 0.13831, 업로드 효과음 0.28220이었다. 기존 DOM/소환서 오디오/추첨 검사 통과. iPad 출력은 미검증.
+- 참가자 영상과 v12 호환 인코딩은 그대로 유지한다. 앱/서비스 워커 버전은 v13이다.
+
 ## 2026-09-10 — figure-v12 소환서 인코딩 호환성 결함
 
 - 사용자가 제공한 v8/v9/v11 진단에서 scroll-idle-video와 scroll-video는 모두 readyState=0, networkState=3, duration=null로 실패했다. 메인/소환 연출은 Blob에서도 readyState=4였다. 단순 자동재생 차단이나 Blob 전체 실패로 설명할 수 없다.

@@ -45,5 +45,29 @@ const server=http.createServer((req,res)=>{
   await page.mouse.move(box.x+20,box.y+box.height/2,{steps:8});await page.mouse.up();
   assert.equal(await page.evaluate(()=>logArr.length),1);
   console.log('PASS: actual video seeks during drag; reversed/cancelled drag does not draw');
+  const measured=await page.evaluate(async()=>{
+    const c=audioCtx();await c.resume();cfg.muted=false;cfg.bgmMode='single';cfg.bgmSingleSlot='idle';
+    const samples=44100,bytes=new ArrayBuffer(44+samples*2),d=new DataView(bytes);
+    const str=(at,s)=>{for(let i=0;i<s.length;i++)d.setUint8(at+i,s.charCodeAt(i));};
+    str(0,'RIFF');d.setUint32(4,36+samples*2,true);str(8,'WAVE');str(12,'fmt ');d.setUint32(16,16,true);d.setUint16(20,1,true);d.setUint16(22,1,true);d.setUint32(24,44100,true);d.setUint32(28,88200,true);d.setUint16(32,2,true);d.setUint16(34,16,true);str(36,'data');d.setUint32(40,samples*2,true);
+    for(let i=0;i<samples;i++)d.setInt16(44+i*2,Math.sin(i*2*Math.PI*440/44100)*16000,true);
+    const url=URL.createObjectURL(new Blob([bytes],{type:'audio/wav'}));bgmEl.idle.src=url;
+    setBgmDucked(false);startBgm('idle');await bgmEl.idle.play();
+    const analyser=c.createAnalyser();bgmGains.get(bgmEl.idle).connect(analyser);analyser.fftSize=2048;
+    const wait=()=>new Promise(r=>setTimeout(r,150)),rms=()=>{const data=new Float32Array(2048);analyser.getFloatTimeDomainData(data);return Math.sqrt(data.reduce((sum,v)=>sum+v*v,0)/data.length);};
+    await wait();const normal=rms();setBgmDucked(true);startBgm('play');await wait();const ducked=rms();
+    setBgmDucked(false);await wait();const restored=rms();bgmEl.idle.pause();
+    const fxAnalyser=c.createAnalyser(),createGain=c.createGain.bind(c);
+    c.createGain=()=>{const gain=createGain();gain.connect(fxAnalyser);return gain;};
+    const buffer=c.createBuffer(1,c.sampleRate,c.sampleRate),channel=buffer.getChannelData(0);
+    for(let i=0;i<channel.length;i++)channel[i]=.5*Math.sin(i*2*Math.PI*660/c.sampleRate);
+    sfxBuf.special=buffer;playSfx('fanfare');await wait();
+    const data=new Float32Array(fxAnalyser.fftSize);fxAnalyser.getFloatTimeDomainData(data);const effect=Math.sqrt(data.reduce((sum,v)=>sum+v*v,0)/data.length);
+    c.createGain=createGain;analyser.disconnect();fxAnalyser.disconnect();URL.revokeObjectURL(url);
+    return {normal,ducked,restored,effect};
+  });
+  assert.ok(measured.normal>.05);assert.ok(Math.abs(measured.ducked/measured.normal-.25)<.03,JSON.stringify(measured));
+  assert.ok(Math.abs(measured.restored/measured.normal-1)<.08);assert.ok(measured.effect>.1);
+  console.log('PASS: real WebAudio RMS verifies 25% BGM attenuation/restoration and audible uploaded fanfare signal',measured);
  }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;}).finally(()=>server.close());

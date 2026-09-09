@@ -537,7 +537,7 @@
 /* ════════════════ 저장소 키 ════════════════ */
 const K_CFG='figure-draw.config.v1', K_STOCK='figure-draw.stock.v1', K_LOG='figure-draw.log.v1', K_COOL='figure-draw.cooldown.v1';
 const K_STATE='figure-draw.draw-state.v1';
-const APP_VER='figure-v12';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
+const APP_VER='figure-v13';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
 
 /* ════════════════ 기본 설정 (관리자 미설정 시) ════════════════ */
 function defaultConfig(){
@@ -915,6 +915,8 @@ function fireConfetti(){
 
 /* ════════════════ 사운드 (효과음=WebAudio 합성, BGM=업로드 파일) ════════════════ */
 let actx=null; function audioCtx(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return actx; }
+function unlockAudio(){const c=audioCtx();if(c&&c.state!=='running'&&c.state!=='closed')c.resume().catch(error=>console.warn('Audio resume failed',error));}
+for(const event of ['pointerup','touchend','click','keydown'])document.addEventListener(event,unlockAudio,{capture:true,passive:true});
 function tone(freq,dur,type,vol,delay){ const c=audioCtx(); if(!c||cfg.muted)return; const t=c.currentTime+(delay||0); const o=c.createOscillator(),g=c.createGain(); o.type=type||'sine'; o.frequency.value=freq; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol||.2,t+.01); g.gain.exponentialRampToValueAtTime(.001,t+dur); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur); }
 /* 효과음: 업로드 파일 우선, 없으면 기본 합성음(WebAudio) 폴백
    ※ iOS는 blob <audio>를 재생 완료 후 되감아 재생하면 두 번째부터 무음이 되는 결함이 있어,
@@ -928,8 +930,15 @@ async function loadSfx(){ for(const k of ['pick','win','special']){ const d=awai
   if(typeof d==='string'){ sfxEl[k].src=d; } else { const b=mediaBlob(d); if(b) sfxEl[k].src=sfxUrls[k]=URL.createObjectURL(b); } } }
 function playSfx(kind){
   if(cfg.muted)return;
+  const c=audioCtx();
+  if(c&&c.state!=='running'){
+    c.resume().then(()=>{if(c.state==='running'&&!cfg.muted)playSfxReady(kind,c);}).catch(error=>console.warn('Effect audio resume failed',error));return;
+  }
+  playSfxReady(kind,c);
+}
+function playSfxReady(kind,c){
+  if(cfg.muted)return;
   const slot={pick:'pick',win:'win',fanfare:'special'}[kind];
-  const c=audioCtx(); if(c&&c.state==='suspended'){ try{c.resume();}catch(e){} }
   const buf=slot&&sfxBuf[slot];
   if(buf&&c){ try{ const s=c.createBufferSource(), g=c.createGain(); s.buffer=buf; g.gain.value=.8; s.connect(g); g.connect(c.destination); s.start(); return; }catch(e){} }
   const a=slot&&sfxEl[slot];
@@ -941,8 +950,19 @@ function playSfx(kind){
 }
 /* BGM: 화면별 3슬롯 (대기 / 선택 / 뽑기), 루핑 */
 const bgmEl={ idle:new Audio(), select:new Audio(), play:new Audio() }; Object.values(bgmEl).forEach(a=>a.loop=true); let curBgm=null; const bgmUrls={};
+const bgmGains=new Map();let bgmDucked=false;
+function syncBgmGain(a){
+  const c=audioCtx();let gain=bgmGains.get(a);
+  if(!gain&&c&&c.createMediaElementSource){
+    try{gain=c.createGain();const source=c.createMediaElementSource(a);source.connect(gain);gain.connect(c.destination);bgmGains.set(a,gain);}catch(error){console.warn('BGM audio routing failed',error);}
+  }
+  const level=.4*(bgmDucked ? .25 : 1);
+  if(gain){a.volume=1;gain.gain.cancelScheduledValues(c.currentTime);gain.gain.setValueAtTime(level,c.currentTime);}
+  else a.volume=level; // Non-WebAudio fallback only.
+}
+function setBgmDucked(active){bgmDucked=!!active;Object.values(bgmEl).forEach(syncBgmGain);}
 async function loadBgm(){ for(const slot of ['idle','select','play']){ const d=await idbGet('bgm_'+slot); if(!d)continue; if(bgmUrls[slot]){try{URL.revokeObjectURL(bgmUrls[slot]);}catch(e){}} if(typeof d==='string'){ bgmEl[slot].src=d; } else { const b=mediaBlob(d); if(b) bgmEl[slot].src=bgmUrls[slot]=URL.createObjectURL(b); } } }
-function startBgm(slot){ if(curBgm&&curBgm!==slot){ try{bgmEl[curBgm].pause();}catch(e){} } curBgm=slot; if(cfg.muted)return; const a=bgmEl[slot]; if(a&&a.src){ a.volume=.4; a.play().catch(()=>{}); } }
+function startBgm(slot){ if(curBgm&&curBgm!==slot){ try{bgmEl[curBgm].pause();}catch(e){} } curBgm=slot; if(cfg.muted)return; const a=bgmEl[slot]; if(a&&a.src){ syncBgmGain(a);unlockAudio();a.play().catch(error=>console.warn('BGM playback failed',error)); } }
 function applyMute(){ if(cfg.muted){ Object.values(bgmEl).forEach(a=>{try{a.pause();}catch(e){}});} else if(curBgm){ startBgm(curBgm); } }
 
 /* ════════════════ S9 관리자 ════════════════ */

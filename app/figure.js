@@ -6,20 +6,18 @@ const figurePercent=()=>Number(cfg.figureWinPercent??10);
 const figureProbabilityEnabled=()=>cfg.figureProbabilityEnabled===true;
 const activeFigurePercent=()=>figureProbabilityEnabled()?figurePercent():null;
 let scrollScrubbing=false,scrollSeekTarget=null;
-// BGM: optional single-track mode keeps one slot looping across screens. It never touches volume, so the
-// 25% ducking on the scroll screen (scrollMix) and the admin mute keep working exactly as before.
+// Keep the same media element/time in continuous mode; GainNode controls ducking on iPad.
 const BGM_SLOTS=['idle','select','play'];
 const bgmSingle=()=>cfg.bgmMode==='single';
 const bgmSingleSlot=()=>BGM_SLOTS.includes(cfg.bgmSingleSlot)?cfg.bgmSingleSlot:'idle';
 startBgm=function(slot){
-  if(bgmSingle()){slot=bgmSingleSlot();const a=bgmEl[slot];if(curBgm===slot&&a&&a.src&&!a.paused&&!cfg.muted)return;}
+  if(bgmSingle()){slot=bgmSingleSlot();const a=bgmEl[slot];if(curBgm===slot&&a&&a.src&&!a.paused&&!cfg.muted){syncBgmGain(a);unlockAudio();return;}}
   figureBase.startBgm(slot);
 };
 const scrollVideo=()=>document.getElementById('scroll-video');
-let scrollBgmVolumes=null,whiteoutFrame=0;
+let whiteoutFrame=0;
 function scrollMix(active){
-  if(active&&!scrollBgmVolumes){scrollBgmVolumes=Object.values(bgmEl).map(v=>[v,v.volume]);scrollBgmVolumes.forEach(([v,volume])=>v.volume=volume*.25);}
-  if(!active&&scrollBgmVolumes){scrollBgmVolumes.forEach(([v,volume])=>v.volume=volume);scrollBgmVolumes=null;}
+  setBgmDucked(active);
 }
 function scrollWhiteout(value,fade=false){const el=document.getElementById('scroll-whiteout');el.style.transition=fade?'opacity 400ms ease-out':'none';el.style.opacity=String(Math.max(0,Math.min(1,value)));}
 function updateScrollWhiteout(time){const duration=scrollVideo().duration;if(Number.isFinite(duration))scrollWhiteout((time-(duration-.3))/.3);}

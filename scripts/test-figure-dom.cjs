@@ -128,7 +128,7 @@ for(const k of ['idle','select','play']){bgmCalls[k]={play:0,pause:0};bgm[k].pla
 evaluate("cfg.bgmMode='single';cfg.bgmSingleSlot='idle';cfg.muted=false;bgmEl.idle.src='blob:idle';bgmEl.play.src='blob:play';");
 w.startBgm('idle');w.startBgm('select');w.startBgm('play');
 assert.deepEqual([bgmCalls.idle.play,bgmCalls.idle.pause,bgmCalls.play.play],[1,0,0]);assert.equal(evaluate('curBgm'),'idle');
-bgm.idle.volume=.1;w.startBgm('play');assert.equal(bgm.idle.volume,.1); // a ducked volume survives screen changes
+w.scrollMix(true);w.startBgm('play');assert.equal(bgm.idle.volume,.1); // Ducking is explicit state, not a writable media volume assumption.
 evaluate("cfg.bgmMode='screen'");w.startBgm('play');assert.deepEqual([bgmCalls.idle.pause,bgmCalls.play.play],[1,1]);
 w.renderAdmSettings();assert.equal(w.document.getElementById('bgm-mode').value,'screen');assert.equal(w.document.getElementById('bgm-single-slot').disabled,true);
 w.document.getElementById('bgm-mode').value='single';w.document.getElementById('bgm-single-slot').value='play';w.saveBgmMode();

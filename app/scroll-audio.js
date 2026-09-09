@@ -6,7 +6,7 @@ const ScrollSound=(()=>{
   async function prepare(){
     try{
       const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return;
-      context=new Audio();
+      context=typeof audioCtx==='function'?audioCtx():new Audio();
       forward=await load('assets/figure/sacred-open.wav');
       reverse=context.createBuffer(forward.numberOfChannels,forward.length,forward.sampleRate);
       for(let c=0;c<forward.numberOfChannels;c++){const src=forward.getChannelData(c),dst=reverse.getChannelData(c);for(let i=0;i<src.length;i++)dst[i]=src[src.length-1-i];}
@@ -16,14 +16,14 @@ const ScrollSound=(()=>{
     }catch{ /* Embedded video audio remains available for automatic playback. */ }
   }
   function stop(){for(const v of voices){try{v.stop();}catch{}}voices.clear();}
-  function begin(){stop();previous=0;lastGrain=-Infinity;if(context&&context.state==='suspended')context.resume().catch(()=>{});}
+  function begin(){stop();previous=0;lastGrain=-Infinity;if(context&&context.state!=='running')context.resume().catch(()=>{});}
   function has(name){return !!(context&&clips[name]);}
   // Play a decoded clip from `offset` seconds (looping for the idle bed). Returns false only when Web Audio
   // cannot carry it, so the caller can fall back to the video element's own audio track.
   function cue(name,offset,muted,loop=false){
     stop();if(muted)return true;
     if(!has(name))return false;
-    if(context.state==='suspended')context.resume().catch(()=>{});
+    if(context.state!=='running')context.resume().catch(()=>{});
     const buffer=clips[name],source=context.createBufferSource();source.buffer=buffer;source.loop=loop;
     source.connect(context.destination);voices.add(source);
     source.onended=()=>{voices.delete(source);source.disconnect();};

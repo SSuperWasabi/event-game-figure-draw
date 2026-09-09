@@ -9,6 +9,8 @@
 
 ## 현재 상태
 
+figure-v13: BGM 볼륨은 Web Audio GainNode로 기본 0.4, 소환서 화면 0.1(25%)을 적용한다. 감소 여부를 별도 상태로 보존하여 BGM 재호출·음소거 해제 시에도 유지한다. 연속 모드에서는 동일한 오디오 요소와 재생 위치를 유지한다. 효과음과 소환서 오디오는 하나의 AudioContext를 사용하고 사용자 터치에서 활성화한다. 효과음은 suspended/interrupted 상태의 resume 완료 후 재생한다. `node scripts/test-audio-mix.cjs`와 실제 브라우저 테스트에서 Gain·효과음 신호를 확인했다. iPad 실기기 확인은 별도로 필요하다.
+
 figure-v12: iPad 진단에서 소환서 두 MP4만 메타데이터 로딩 전 실패했다. 실제 H.264 헤더가 Level 6.2 및 SPS time_scale=30720으로 생성된 문제를 기존 변환 명령으로 재현했다. 원본에서 30fps·인코더 time base 1/30·High Level 3.1로 재생성했고, `node scripts/test-scroll-encoding.cjs`로 AVC/SPS 및 전체 디코딩을 검증한다. 새 서비스 워커 설치는 HTTP 캐시를 재검증하여 이전 영상이 다시 들어오지 않도록 한다. iPad 실기기 최종 재생 확인은 아직 필요하다.
 
 figure-v11: 첫 프레임 준비 전에는 대기 영상을 유지한다. 준비용 재생 직후 중단하던 호출과 준비 이벤트의 불필요한 되감기를 수정했다. Blob 다운로드 완료본은 보존해 진행 중 주소를 바꾸지 않고 다음 진입에 적용한다. 자동 오픈은 첫 프레임 준비 후 이어지고 화면을 벗어나면 취소된다. 실제 Chrome에서 영상 응답을 보류한 뒤 자동 오픈 완료와 다음 소환서 드래그를 검증한다(`node scripts/test-figure-browser.cjs`, 시스템 Chrome 필요). iPad 실기기 검증은 별도로 필요하다.
