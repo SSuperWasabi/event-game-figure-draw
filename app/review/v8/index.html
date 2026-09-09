@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><script>for(const key of ["config.v1","stock.v1","log.v1","cooldown.v1","draw-state.v1"]){const value=localStorage.getItem('figure-draw.'+key);if(value!==null)localStorage.setItem("figure-review-v8."+key,value);else localStorage.removeItem("figure-review-v8."+key);}</script><base href="../../">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#160A33">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<title>제라투 피규어 드로우</title>
+
+<style>
+  /* ════════ Com2uS Lucky Draw 디자인 시스템 토큰 (퍼플+골드) ════════ */
+  @font-face{font-family:"Pretendard";font-weight:300;font-display:swap;src:local("Pretendard Light"),url("assets/fonts/Pretendard-Light.otf") format("opentype")}
+  @font-face{font-family:"Pretendard";font-weight:400;font-display:swap;src:local("Pretendard Regular"),url("assets/fonts/Pretendard-Regular.otf") format("opentype")}
+  @font-face{font-family:"Pretendard";font-weight:500;font-display:swap;src:local("Pretendard Medium"),url("assets/fonts/Pretendard-Medium.otf") format("opentype")}
+  @font-face{font-family:"Pretendard";font-weight:600;font-display:swap;src:local("Pretendard SemiBold"),url("assets/fonts/Pretendard-SemiBold.otf") format("opentype")}
+  @font-face{font-family:"Pretendard";font-weight:700;font-display:swap;src:local("Pretendard Bold"),url("assets/fonts/Pretendard-Bold.otf") format("opentype")}
+  @font-face{font-family:"Pretendard";font-weight:800;font-display:swap;src:local("Pretendard ExtraBold"),url("assets/fonts/Pretendard-ExtraBold.otf") format("opentype")}
+  @font-face{font-family:"Pretendard";font-weight:900;font-display:swap;src:local("Pretendard Black"),url("assets/fonts/Pretendard-Black.otf") format("opentype")}
+  /* Gyoza — 영문 디스플레이(블랙). 한글 글리프 없음 → 한글은 CookieRun 폴백 */
+  @font-face{font-family:"Gyoza";font-weight:100 900;font-style:normal;font-display:swap;src:url("assets/fonts/Gyoza-Black.otf") format("opentype")}
+  /* CookieRun — 한글 디스플레이(둥근). Gyoza와 페어링 */
+  @font-face{font-family:"CookieRun";font-weight:100 500;font-style:normal;font-display:swap;src:url("assets/fonts/CookieRun-Regular.ttf") format("truetype")}
+  @font-face{font-family:"CookieRun";font-weight:600 700;font-style:normal;font-display:swap;src:url("assets/fonts/CookieRun-Bold.ttf") format("truetype")}
+  @font-face{font-family:"CookieRun";font-weight:800 900;font-style:normal;font-display:swap;src:url("assets/fonts/CookieRun-Black.ttf") format("truetype")}
+  :root{
+    --white:#FFFFFF;--ink-900:#000;--ink-700:#333;--ink-500:#666;--ink-400:#999;
+    --line-300:#DDD;--paper-0:#FAFAFC;
+    --brand-red:#DC2828;--brand-red-strong:#E40521;--brand-vivid:#FF2E24;
+    --purple-950:#160A33;--purple-900:#1E0F45;--purple-800:#2A1860;--purple-700:#3D2585;--purple-600:#5A33B5;--purple-500:#7B3FE4;--purple-400:#9B6BF0;--purple-300:#C0A3F7;
+    --gold-700:#B8860B;--gold-600:#F2A800;--gold-500:#FFC93C;--gold-400:#FFD84D;--gold-300:#FFE588;--gold-ink:#5A3D00;
+    --grade-a:#F0B41E;--grade-a-deep:#C5860C;--grade-b:#3B82E0;--grade-b-deep:#1E55B8;--grade-c:#46A63F;--grade-c-deep:#2C7A28;--grade-d:#8B4FD8;--grade-d-deep:#6128B0;--grade-e:#C97B3C;--grade-e-deep:#9A5621;--grade-f:#23A39A;--grade-f-deep:#137C75;--grade-special:#9B5FE0;--grade-special-deep:#6F33C0;--grade-lucky:#FFD24D;--grade-lucky-deep:#D99A14;
+    --ticket-fill:#F2A015;--ticket-empty:#DDD;--danger:#DC2828;--soldout:#8A8A93;
+    --surface-card:var(--white);--surface-glass:rgba(255,255,255,.07);--surface-glass-line:rgba(255,255,255,.16);
+    --text-strong:var(--ink-900);--text-muted:var(--ink-500);--text-faint:var(--ink-400);
+    --font-sans:"Gyoza","CookieRun","Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+    --r-sm:8px;--r-md:12px;--r-lg:20px;--r-xl:28px;--r-2xl:36px;--r-pill:999px;
+    --shadow-card:0 10px 28px rgba(11,4,34,.28);--shadow-pop:0 24px 64px rgba(8,2,28,.55);--shadow-inset-top:inset 0 2px 0 rgba(255,255,255,.55);
+    --glow-purple:0 0 0 1px rgba(155,107,240,.55),0 0 24px rgba(123,63,228,.55),0 0 56px rgba(123,63,228,.30);
+    --glow-gold:0 0 28px rgba(255,201,60,.55),0 6px 18px rgba(242,168,0,.45);--glow-gold-sm:0 0 14px rgba(255,201,60,.5);
+    --grad-stage:radial-gradient(120% 90% at 50% 28%,#3D2585 0%,#2A1860 38%,#1E0F45 68%,#160A33 100%);
+    --grad-gold:linear-gradient(180deg,#FFE588 0%,#FFD14A 42%,#F8B521 72%,#F2A800 100%);
+    --grad-gold-press:linear-gradient(180deg,#F8B521 0%,#F2A800 60%,#D99500 100%);
+    --grad-lucky:linear-gradient(135deg,#FFE9A8 0%,#FFD24D 45%,#E9A41C 100%);
+    --grad-frame:linear-gradient(160deg,#9B6BF0 0%,#7B3FE4 50%,#5A33B5 100%);
+    --prize-well:linear-gradient(160deg,#F4F1FA,#ECE7F6);
+    --ease-inout:cubic-bezier(.65,0,.35,1);
+  }
+  @keyframes ld-pulse-glow{0%,100%{box-shadow:var(--shadow-inset-top),0 0 18px rgba(255,201,60,.45),0 6px 18px rgba(242,168,0,.4)}50%{box-shadow:var(--shadow-inset-top),0 0 34px rgba(255,201,60,.85),0 8px 24px rgba(242,168,0,.55)}}
+  @keyframes ld-twinkle{0%,100%{opacity:.35;transform:translateY(-50%) scale(.8) rotate(0)}50%{opacity:1;transform:translateY(-50%) scale(1.15) rotate(45deg)}}
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none; }
+  html, body { height:100%; overscroll-behavior:none; }
+  body {
+    font-family:var(--font-sans);
+    background:var(--purple-950); display:flex; justify-content:center;
+    overflow:hidden; user-select:none; touch-action:manipulation;
+  }
+  #kiosk {
+    width:100%; max-width:520px; height:100vh; height:100dvh;
+    background:var(--grad-stage);
+    position:relative; overflow:hidden; box-shadow:0 0 60px rgba(0,0,0,.6);
+  }
+  /* 무대 별가루 (faint star field) */
+  #kiosk::before { content:""; position:absolute; inset:0; pointer-events:none; z-index:0; opacity:.5;
+    background-image:
+      radial-gradient(1.5px 1.5px at 18% 12%,rgba(255,255,255,.8),transparent),
+      radial-gradient(1.5px 1.5px at 72% 22%,rgba(255,255,255,.6),transparent),
+      radial-gradient(1.5px 1.5px at 40% 78%,rgba(255,255,255,.5),transparent),
+      radial-gradient(1.5px 1.5px at 86% 64%,rgba(255,255,255,.6),transparent),
+      radial-gradient(1.5px 1.5px at 60% 90%,rgba(255,255,255,.4),transparent); }
+  .screen { position:absolute; inset:0; display:none; flex-direction:column; animation:fadeIn .35s ease; z-index:1; }
+  .screen.active { display:flex; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+
+  /* 공통 */
+  .btn { border:none; cursor:pointer; font-weight:900; font-family:inherit; border-radius:var(--r-pill); transition:transform .12s,filter .15s; }
+  .btn:active { transform:scale(.97); filter:brightness(1.04); }
+  .btn-yellow { position:relative; display:block; background:var(--grad-gold); color:var(--gold-ink); font-size:20px; letter-spacing:-.01em; padding:18px 0; width:78%; margin:0 auto; border-radius:var(--r-pill); box-shadow:var(--shadow-inset-top),var(--glow-gold); overflow:hidden; animation:ld-pulse-glow 1.8s var(--ease-inout) infinite; }
+  .btn-yellow::before,.btn-yellow::after { content:"✦"; position:absolute; top:50%; transform:translateY(-50%); color:rgba(255,255,255,.85); font-size:.72em; pointer-events:none; animation:ld-twinkle 1.6s ease-in-out infinite; }
+  .btn-yellow::before { left:9% } .btn-yellow::after { right:9%; animation-delay:.8s }
+  .btn-yellow:active { background:var(--grad-gold-press); }
+  .btn-yellow:disabled { background:linear-gradient(180deg,#cfc8d6,#b3aabb); color:#7a7580; filter:none; box-shadow:none; cursor:default; animation:none; }
+  .btn-yellow:disabled::before,.btn-yellow:disabled::after { display:none }
+  .btn-ghost { background:var(--surface-glass); color:#fff; font-size:14px; padding:10px 22px; border:1.5px solid var(--surface-glass-line); }
+  .topbar { background:rgba(8,2,28,.42); backdrop-filter:blur(4px); padding:14px 16px; color:#fff; font-size:15px; font-weight:700; flex-shrink:0; display:flex; align-items:center; gap:10px; position:relative; z-index:2; }
+  .topbar .back { background:var(--surface-glass); border:1.5px solid var(--surface-glass-line); color:#fff; width:40px; height:40px; min-width:40px; border-radius:50%; font-size:20px; cursor:pointer; }
+  .topbar .back:active { transform:scale(.94); }
+  .topbar .title { flex:1; line-height:1.3; }
+  .topbar .title em { color:var(--gold-400); font-style:normal; font-weight:800; }
+  .topbar .title small { display:block; font-weight:400; font-size:11px; opacity:.75; margin-top:3px; }
+  /* S1 브랜드 텍스트 스택 (박스 없이 — 영상 위 가독성용 그림자 + 은은한 플로팅) */
+  .idle-brand { display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center; padding:0 24px; animation:idleFloat 6s var(--ease-inout) infinite; }
+  @keyframes idleFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-9px)} }
+  .idle-wordmark { width:280px; height:auto; filter:drop-shadow(0 3px 14px rgba(0,0,0,.55)); }
+  .idle-headline { color:#fff; font-weight:900; line-height:.96; letter-spacing:-.02em; }
+  .idle-headline .ld-1 { display:block; font-size:100px; text-shadow:0 4px 18px rgba(0,0,0,.7),0 1px 3px rgba(0,0,0,.6); }
+  .idle-headline .ld-2 { display:block; font-size:128px; background:linear-gradient(180deg,#FFF1C2 0%,#FFD24D 46%,#F2A800 100%); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 2px 16px rgba(242,168,0,.55)) drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+  .idle-sub { font-size:34px; font-weight:700; letter-spacing:.01em; color:rgba(255,255,255,.95); text-shadow:0 2px 12px rgba(0,0,0,.78); }
+  .idle-sub:empty { display:none; }
+  .img-fallback { display:flex; align-items:center; justify-content:center; background:var(--prize-well); color:var(--purple-600); font-weight:800; }
+  /* 이미지 조정(위치/확대/크롭) — imgTag 래퍼가 클리핑, 안쪽 img에 transform 적용 */
+  .imgadj-wrap { overflow:hidden; }
+  .imgadj-wrap>img { width:100%; height:100%; display:block; object-fit:cover; }
+  .prize-cell .p-img>img, #result-card .rc-img>img { object-fit:contain; }
+  #ip-hero-bg .imgadj-wrap { position:absolute; inset:0; }
+  /* 조정 모달 */
+  .adj-modal { position:absolute; inset:0; z-index:120; background:rgba(8,2,28,.78); display:flex; align-items:center; justify-content:center; padding:18px; }
+  .adj-box { width:100%; max-width:460px; background:var(--purple-900); border:1px solid var(--surface-glass-line); border-radius:var(--r-lg); padding:18px; color:#eee; box-shadow:var(--shadow-pop); }
+  .adj-title { font-weight:800; color:var(--gold-400); margin-bottom:12px; }
+  .adj-preview { width:100%; aspect-ratio:16/9; background:#000; border-radius:var(--r-md); overflow:hidden; margin-bottom:14px; cursor:grab; touch-action:none; user-select:none; }
+  .adj-preview.dragging { cursor:grabbing; }
+  .adj-preview img { width:100%; height:100%; display:block; object-fit:cover; pointer-events:none; -webkit-user-drag:none; }
+  .adj-ctrl { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .adj-ctrl label { width:64px; font-size:13px; color:#b3acd6; flex-shrink:0; }
+  .adj-ctrl input[type=range] { flex:1; accent-color:var(--gold-500); }
+  .adj-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+  /* 관리자 프라이즈 행 버튼 컴팩트 */
+  .prize-edit-row .adm-btn { padding:6px 2px; font-size:11px; }
+  /* 등급 엠블럼 (공유) — AI 생성 메달 이미지(글자 베이크됨), data-tone으로 매핑 */
+  .grade,.rc-grade { background:center/contain no-repeat; font-size:0; color:transparent; border:none; box-shadow:none; }
+  [data-tone="a"]{background-image:url("assets/badges/badge-a.png")}
+  [data-tone="b"]{background-image:url("assets/badges/badge-b.png")}
+  [data-tone="c"]{background-image:url("assets/badges/badge-c.png")}
+  [data-tone="d"]{background-image:url("assets/badges/badge-d.png")}
+  [data-tone="e"]{background-image:url("assets/badges/badge-e.png")}
+  [data-tone="f"]{background-image:url("assets/badges/badge-f.png")}
+  [data-tone="special"]{background-image:url("assets/badges/badge-special.png")}
+  [data-tone="lucky"]{background-image:url("assets/badges/badge-lucky.png")}
+  /* ════ 공용 무대 네온 프레임 (S2~S6) — 퍼플 기본 / .gold 변형 ════ */
+  .stageframe { position:relative; border-radius:var(--r-2xl); padding:7px; background:var(--grad-frame); box-shadow:var(--glow-purple); }
+  .stageframe.gold { background:linear-gradient(160deg,#FFE07A 0%,#F2A800 55%,#B8860B 100%); box-shadow:var(--glow-gold); }
+  .stageframe>.sf-in { position:relative; border-radius:var(--r-xl); background:linear-gradient(165deg,#241248,#140A2C); border:1.5px solid rgba(155,107,240,.5); overflow:hidden; }
+  .stageframe.gold>.sf-in { background:linear-gradient(165deg,#2a1d05,#140C02); border-color:rgba(255,214,102,.55); }
+  .stageframe>.sf-in::before { content:""; position:absolute; inset:0; pointer-events:none; z-index:0; opacity:.55;
+    background-image:
+      radial-gradient(1.5px 1.5px at 16% 14%,rgba(255,255,255,.8),transparent),
+      radial-gradient(1.5px 1.5px at 80% 20%,rgba(255,255,255,.6),transparent),
+      radial-gradient(1.5px 1.5px at 30% 82%,rgba(255,255,255,.5),transparent),
+      radial-gradient(1.5px 1.5px at 88% 74%,rgba(255,255,255,.6),transparent),
+      radial-gradient(1.5px 1.5px at 60% 92%,rgba(255,255,255,.4),transparent); }
+  .sf-corners i { position:absolute; color:rgba(255,255,255,.85); font-size:16px; text-shadow:0 0 8px rgba(255,255,255,.6); pointer-events:none; z-index:3; animation:sfTw 2.4s ease-in-out infinite; }
+  .sf-corners i:nth-child(1){top:9px;left:11px}.sf-corners i:nth-child(2){top:9px;right:11px;animation-delay:.6s}.sf-corners i:nth-child(3){bottom:9px;left:11px;animation-delay:1.1s}.sf-corners i:nth-child(4){bottom:9px;right:11px;animation-delay:1.6s}
+  .stageframe.gold .sf-corners i{color:#FFF1C2;text-shadow:0 0 8px rgba(255,210,90,.85)}
+  @keyframes sfTw{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+
+  /* S1 대기 — 시네마틱 폴리시(스포트라이트·비네팅·그레인·보케·시머·스파클) */
+  #scr-idle { justify-content:center; align-items:center; cursor:pointer; gap:40px; }
+  #idle-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; }
+  /* 루핑 영상/배경 가독성 레이어 — 차콜 35% 스크림 + 중앙 보라 스포트라이트 */
+  #scr-idle::before { content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
+    background:
+      radial-gradient(58% 42% at 50% 42%, rgba(155,107,240,.26), transparent 72%),
+      linear-gradient(rgba(46,46,51,.35), rgba(46,46,51,.35)); }
+  /* 미세 그레인 — 밴딩 제거·질감 */
+  #scr-idle::after { content:""; position:absolute; inset:0; z-index:1; pointer-events:none; opacity:.05; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:120px 120px; }
+  #scr-idle > *:not(#idle-video):not(#idle-video-blur):not(.bubbles):not(.idle-sparkles):not(#admin-tap) { position:relative; z-index:3; }
+  #scr-idle .touch-banner { position:relative; overflow:hidden; background:var(--grad-lucky); border:1px solid rgba(255,255,255,.5); color:var(--gold-ink); font-size:18px; font-weight:800; padding:15px 38px; border-radius:var(--r-pill); text-shadow:0 1px 1px rgba(255,255,255,.35); animation:pulse 1.6s infinite; }
+  #scr-idle .touch-banner::after { content:""; position:absolute; top:0; left:-65%; width:55%; height:100%; pointer-events:none; background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent); animation:bannerShimmer 3.4s ease-in-out infinite; }
+  @keyframes bannerShimmer { 0%{left:-65%} 55%,100%{left:135%} }
+  @keyframes pulse { 0%{box-shadow:var(--shadow-inset-top),0 8px 22px rgba(0,0,0,.38),0 0 0 0 rgba(255,201,60,.55)} 70%{box-shadow:var(--shadow-inset-top),0 8px 22px rgba(0,0,0,.38),0 0 0 20px rgba(255,201,60,0)} 100%{box-shadow:var(--shadow-inset-top),0 8px 22px rgba(0,0,0,.38),0 0 0 0 rgba(255,201,60,0)} }
+  #scr-idle.soldout .touch-banner { background:rgba(80,80,90,.5); border-color:rgba(255,255,255,.12); animation:none; }
+  #scr-idle.soldout .touch-banner::after { display:none; }
+  /* 부유 보케 + 골드 더스트 */
+  .bubbles { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:1; }
+  .bubbles i { position:absolute; display:block; border-radius:50%; filter:blur(.5px); background:radial-gradient(circle at 35% 35%, rgba(192,163,247,.22), rgba(123,63,228,.05) 60%, transparent 72%); animation:rise linear infinite; }
+  .bubbles i:nth-child(3n) { background:radial-gradient(circle at 35% 35%, rgba(255,216,77,.18), rgba(242,168,0,.04) 55%, transparent 70%); }
+  @keyframes rise { from{transform:translateY(110vh)} to{transform:translateY(-20vh)} }
+  /* 반짝이는 ✦ 스파클 (가장자리 위주) */
+  .idle-sparkles { position:absolute; inset:0; pointer-events:none; z-index:2; }
+  .idle-sparkles i { position:absolute; color:rgba(255,255,255,.92); text-shadow:0 0 8px rgba(255,216,77,.7); animation:sparkleTw 2.6s ease-in-out infinite; }
+  @keyframes sparkleTw { 0%,100%{opacity:.22;transform:scale(.7) rotate(0)} 50%{opacity:1;transform:scale(1.15) rotate(45deg)} }
+  #admin-tap { position:absolute; top:0; right:0; width:110px; height:110px; z-index:9; }
+  #scr-idle .copyright { position:absolute; bottom:16px; font-size:11px; color:rgba(255,255,255,.5); z-index:3; }
+
+  /* S2 IP 선택 — 상단 히어로(배경 이미지 + BI 로고 + 타이틀 오버레이) */
+  #ip-hero { flex-shrink:0; height:200px; position:relative; overflow:hidden; display:flex; align-items:flex-end; }
+  #ip-hero-bg { position:absolute; inset:0; z-index:0; }
+  #ip-hero-bg img, #ip-hero-bg .img-fallback { width:100%; height:100%; object-fit:cover; font-size:30px; }
+  .ip-hero-cap { position:relative; z-index:2; width:100%; padding:16px 18px; display:flex; flex-direction:column; align-items:flex-start; gap:8px; background:linear-gradient(to top,rgba(0,0,0,.72),rgba(0,0,0,.15) 62%,transparent); }
+  .ip-hero-logo { width:150px; height:auto; filter:drop-shadow(0 2px 8px rgba(0,0,0,.65)); }
+  .ip-hero-line { color:#fff; font-size:24px; font-weight:900; letter-spacing:-.01em; line-height:1.2; text-shadow:0 2px 10px rgba(0,0,0,.85); }
+  #ip-list { flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px; }
+  .ip-card { background:#1a1030; border-radius:var(--r-lg); overflow:hidden; color:#fff; cursor:pointer; border:1.5px solid var(--surface-glass-line); transition:transform .14s; display:block; height:118px; position:relative; box-shadow:var(--shadow-card); }
+  .ip-card:active { transform:scale(.99); }
+  .ip-card .ipimg { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; font-size:40px; }
+  .ip-card .ipinfo { position:absolute; inset:0; z-index:2; padding:0 56px 0 18px; display:flex; flex-direction:column; justify-content:center; gap:6px; background:linear-gradient(90deg,rgba(8,2,28,.88) 0%,rgba(8,2,28,.62) 40%,rgba(8,2,28,.05) 72%,transparent 100%); }
+  .ip-card .ipinfo h3 { font-size:21px; font-weight:800; line-height:1.15; word-break:keep-all; text-shadow:0 2px 8px rgba(0,0,0,.7); }
+  .ip-card .ipinfo .stock { font-size:13px; color:rgba(255,255,255,.75); } .ip-card .ipinfo .stock b { color:var(--gold-400); font-size:22px; font-weight:900; }
+  .ip-card .gauge { height:7px; width:60%; background:rgba(255,255,255,.18); border-radius:4px; overflow:hidden; margin-top:2px; }
+  .ip-card .gauge i { display:block; height:100%; background:var(--grad-gold); }
+  .ip-card::after { content:"›"; position:absolute; right:14px; top:50%; transform:translateY(-50%); z-index:2; width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,.16); border:1.5px solid rgba(255,255,255,.4); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:800; color:#fff; }
+  .ip-card.soldout { filter:grayscale(.9) brightness(.6); pointer-events:none; }
+  .ip-card.soldout::after { display:none; }
+  .ip-card .soldout-badge { position:absolute; top:10px; right:10px; z-index:3; background:var(--soldout); color:#fff; font-size:12px; font-weight:900; letter-spacing:.04em; padding:5px 12px; border-radius:var(--r-pill); display:none; }
+  .ip-card.soldout .soldout-badge { display:block; }
+
+  /* S3 경품 라인업 — 다크 카드 + 좌 이미지 / 우 흰 정보패널 */
+  #prize-grid { flex:1; overflow-y:auto; padding:20px 14px; display:grid; grid-template-columns:1fr 1fr; gap:16px; align-content:start; }
+  .prize-cell { display:flex; align-items:stretch; gap:12px; background:linear-gradient(160deg,#2A1860,#160A33); border-radius:var(--r-lg); border:1.5px solid rgba(155,107,240,.4); padding:12px 12px 12px 14px; position:relative; box-shadow:var(--shadow-card); min-height:152px; }
+  .prize-cell::after { content:"✦✦"; position:absolute; top:10px; right:14px; font-size:12px; letter-spacing:2px; color:rgba(192,163,247,.55); pointer-events:none; z-index:2; }
+  .prize-cell.lucky { background:var(--grad-lucky); border-color:rgba(255,255,255,.55); box-shadow:var(--glow-gold-sm),var(--shadow-card); }
+  .prize-cell.lucky::after { color:rgba(255,255,255,.8); }
+  .prize-cell .grade { position:absolute; top:-12px; left:-10px; z-index:3; width:64px; height:64px; }
+  .prize-cell .p-img { flex:1.1; align-self:stretch; border-radius:var(--r-md); object-fit:contain; background:rgba(0,0,0,.2); font-size:48px; min-width:0; }
+  .prize-cell .p-body { flex:1; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:8px; background:#fff; border-radius:var(--r-md); padding:12px 14px; }
+  .prize-cell .p-name { font-size:16px; font-weight:800; color:var(--text-strong); line-height:1.25; word-break:keep-all; }
+  .prize-cell .p-meta { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-muted); border-top:1px solid #ececec; padding-top:9px; }
+  .prize-cell .p-meta .tk-chip { width:22px; height:15px; border-radius:3px; transform:rotate(-8deg); background:linear-gradient(180deg,#FFD14A,#F2A015); box-shadow:inset 0 0 0 1px rgba(0,0,0,.12); flex-shrink:0; }
+  .prize-cell .p-meta b { color:var(--text-strong); font-size:19px; font-weight:900; }
+  .prize-cell .p-meta b.low { color:var(--danger); }
+  .prize-cell .p-meta .tot { color:var(--text-faint); font-weight:700; }
+  .prize-cell .p-sub { font-size:13px; color:var(--text-muted); border-top:1px solid #ececec; padding-top:9px; }
+  .ticket-gauge { display:flex; flex-wrap:wrap; gap:4px; }
+  .ticket-gauge i { width:12px; height:15px; border-radius:3px; background:var(--ticket-empty); }
+  .ticket-gauge i.on { background:var(--ticket-fill); box-shadow:inset 0 0 0 1px rgba(0,0,0,.08); }
+  .prize-cell.out { filter:grayscale(.9); opacity:.55; }
+  .prize-cell .out-badge { position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(40,38,48,.5); color:#fff; font-weight:900; font-size:20px; letter-spacing:.04em; border-radius:var(--r-lg); z-index:2; }
+  .prize-cell.out .out-badge { display:flex; }
+  .lineup-footer { flex-shrink:0; padding:14px 0 18px; background:rgba(8,2,28,.32); }
+  .lineup-footer .hint { text-align:center; color:rgba(255,255,255,.82); font-size:16px; margin-bottom:12px; padding:0 16px; word-break:keep-all; }
+
+  /* S4 뽑기 — 중앙 네온 프레임 박스 + NPC */
+  #scr-draw { color:#fff; }
+  #draw-stage { flex:1; display:flex; align-items:center; justify-content:center; padding:20px; }
+  #draw-box { position:relative; width:min(82vw,56vh); padding:6px 0 8px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:16px; animation:cardIn .5s cubic-bezier(.2,1.5,.4,1); }
+  @keyframes ld-twinkle2 { 0%,100%{opacity:.35;transform:scale(.8) rotate(0)} 50%{opacity:1;transform:scale(1.15) rotate(45deg)} }
+  #draw-box .npc-art { position:relative; width:100%; aspect-ratio:578/615; }
+  #draw-box .npc-art .npc-media { position:absolute; inset:6.5%; border-radius:18px; overflow:hidden; font-size:108px; display:flex; align-items:center; justify-content:center; background:#160A33; }
+  #draw-box .npc-art .npc-media>img, #draw-box .npc-art .npc-media>video { width:100%; height:100%; object-fit:cover; display:block; }
+  #draw-box .npc-art .npc-frame { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:2; }
+  #draw-box .draw-msg { font-size:17px; font-weight:700; color:#fff; }
+  #ticket-box { flex:1; width:100%; display:flex; flex-wrap:wrap; gap:14px; align-content:center; justify-content:center; padding:16px 28px; }
+  .ticket { width:66px; height:90px; border-radius:var(--r-sm); cursor:pointer; background:linear-gradient(180deg,#FDF6E3,#F5E6BD); border:2px dashed var(--gold-700); display:flex; align-items:center; justify-content:center; font-size:26px; color:var(--gold-700); font-weight:900; box-shadow:0 4px 10px rgba(0,0,0,.35); transition:transform .15s; animation:wobble 2.4s ease-in-out infinite; }
+  .ticket:nth-child(2n){animation-delay:.4s} .ticket:nth-child(3n){animation-delay:.9s}
+  @keyframes wobble { 0%,100%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} }
+  .ticket:active { transform:scale(1.15); }
+  .ticket.disabled { pointer-events:none; }
+  .ticket.opening { animation:ticketOpen .5s forwards; }
+  @keyframes ticketOpen { to{transform:scale(2.4);opacity:0} }
+
+  /* 당첨 연출 (S6 진입 시 — 구 S5 통합) */
+  @keyframes cardIn { from{transform:scale(.2) rotate(-12deg);opacity:0} to{transform:none;opacity:1} }
+  /* 번개 이펙트 */
+  #fx-flash { position:absolute; inset:0; background:radial-gradient(circle,#FFF8D0,#FFD14A 60%,transparent); opacity:0; pointer-events:none; z-index:30; }
+  #fx-flash.go { animation:flash .6s ease-out; }
+  @keyframes flash { 0%{opacity:0} 12%{opacity:.95} 30%{opacity:.2} 45%{opacity:.85} 100%{opacity:0} }
+  .shake { animation:shake .5s; }
+  @keyframes shake { 0%,100%{transform:translate(0,0)} 20%{transform:translate(-8px,4px)} 40%{transform:translate(8px,-4px)} 60%{transform:translate(-6px,-3px)} 80%{transform:translate(6px,3px)} }
+  .bolt { position:absolute; top:-10%; width:6px; height:60%; background:linear-gradient(#fff,#FFD14A); box-shadow:0 0 16px var(--gold-400); z-index:31; opacity:0; transform-origin:top; }
+  .bolt.go { animation:boltGo .5s ease-out; }
+  @keyframes boltGo { 0%{opacity:0;transform:scaleY(0)} 20%{opacity:1;transform:scaleY(1)} 100%{opacity:0} }
+  .confetti { position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:25; }
+  .confetti i { position:absolute; width:10px; height:14px; top:-20px; animation:drop linear forwards; }
+  @keyframes drop { to{transform:translateY(110vh) rotate(720deg)} }
+
+  /* S6 결과 (스태프 제시) */
+  #scr-result { --cw:min(92vw,33vh); color:#fff; justify-content:center; align-items:center; gap:18px; padding:10px; overflow-y:auto; }
+  #scr-result h2 { font-size:78px; font-weight:900; letter-spacing:-.02em; line-height:1.05; text-align:center; width:100%; word-break:keep-all; }
+  #result-card { position:relative; width:var(--cw); margin-top:3.5vh; aspect-ratio:1200/1600; container-type:inline-size; filter:drop-shadow(0 8px 24px rgba(0,0,0,.55)); animation:cardIn .55s cubic-bezier(.2,1.6,.4,1); }
+  #result-card .rc-img { position:absolute; left:50%; top:38.6%; transform:translate(-50%,-50%); width:79%; height:61%; border-radius:10px; overflow:hidden; background:transparent; font-size:24cqw; color:#fff; display:flex; align-items:center; justify-content:center; z-index:1; }
+  #result-card .rc-img>img { width:100%; height:100%; object-fit:cover; display:block; }
+  #result-card .rc-frame { position:absolute; inset:0; width:100%; height:100%; z-index:2; pointer-events:none; }
+  #result-card .rc-grade { position:absolute; top:-7%; left:50%; transform:translateX(-50%); width:30%; aspect-ratio:1/1; z-index:3; filter:drop-shadow(0 3px 7px rgba(0,0,0,.55)); }
+  #result-card .rc-name { position:absolute; left:50%; top:84%; transform:translate(-50%,-50%); width:82%; text-align:center; font-size:6.2cqw; font-weight:900; line-height:1.12; word-break:keep-all; color:#FFE08A; text-shadow:0 2px 4px rgba(0,0,0,.95),0 0 3px rgba(0,0,0,.8); z-index:3; }
+  #result-card .rc-ip { display:none; }
+  #result-card.lastone-extra { filter:drop-shadow(0 0 16px var(--gold-400)) drop-shadow(0 8px 24px rgba(0,0,0,.5)); }
+  #result-lastone { background:var(--grad-lucky); color:var(--gold-ink); border-radius:var(--r-lg); width:var(--cw); padding:16px; text-align:center; font-weight:800; font-size:17px; box-shadow:var(--glow-gold-sm); }
+  #result-lastone .rl-name { font-size:24px; margin-top:6px; color:var(--text-strong); }
+  #result-meta { color:rgba(255,255,255,.92); font-size:16px; text-align:center; white-space:nowrap; }
+  #result-meta b { color:var(--gold-400); }
+  #result-hint { font-size:20px; color:rgba(255,255,255,.8); }
+  #result-infobox { width:var(--cw); display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; word-break:keep-all; overflow-wrap:break-word; }
+  #scr-result .btn-yellow { width:var(--cw); margin-top:16px; }
+
+  /* S9 관리자 — 차분한 다크 퍼플 크롬 */
+  #scr-admin { background:var(--purple-950); color:#eee; }
+  #scr-admin .topbar { background:rgba(0,0,0,.55); backdrop-filter:none; }
+  #pin-pad { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; }
+  #pin-pad .pin-dots { font-size:32px; letter-spacing:10px; height:40px; color:var(--gold-400); }
+  #pin-grid { display:grid; grid-template-columns:repeat(3,72px); gap:12px; }
+  #pin-grid button { height:72px; border-radius:var(--r-md); border:none; background:var(--purple-700); color:#fff; font-size:24px; font-weight:800; cursor:pointer; }
+  #pin-grid button:active { background:var(--gold-400); color:#222; }
+  #admin-body { flex:1; overflow-y:auto; padding:14px; display:none; }
+  #admin-body.show { display:block; }
+  .adm-tabs { display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+  .adm-tabs button { flex:1; min-width:74px; padding:10px 4px; border:none; border-radius:10px; background:var(--purple-800); color:#c9c2e6; font-weight:700; font-size:13px; cursor:pointer; }
+  .adm-tabs button.active { background:var(--gold-400); color:#222; }
+  .adm-pane { display:none; } .adm-pane.show { display:block; }
+  .adm-card { background:var(--purple-800); border-radius:var(--r-md); padding:14px; margin-bottom:12px; }
+  .adm-card h4 { font-size:15px; margin-bottom:10px; color:var(--gold-400); }
+  .adm-row { display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+  .adm-row label { font-size:12px; color:#b3acd6; width:64px; flex-shrink:0; }
+  .adm-row input[type=text], .adm-row input[type=number], .adm-row select { flex:1; min-width:80px; padding:8px; border-radius:var(--r-sm); border:1px solid #443a6e; background:var(--purple-950); color:#fff; font-family:inherit; font-size:14px; }
+  .adm-row input[type=number]{ max-width:90px; }
+  .adm-btn { padding:9px 14px; border:none; border-radius:var(--r-sm); font-weight:700; cursor:pointer; font-size:13px; }
+  .adm-btn.pri { background:var(--gold-400); color:#222; } .adm-btn.sec { background:var(--purple-600); color:#fff; } .adm-btn.dng { background:var(--brand-red); color:#fff; }
+  .adm-thumb { width:42px; height:42px; border-radius:var(--r-sm); object-fit:cover; background:var(--purple-950); font-size:20px; display:inline-flex; align-items:center; justify-content:center; }
+  table.adm-tbl { width:100%; border-collapse:collapse; font-size:13px; }
+  table.adm-tbl th, table.adm-tbl td { border-bottom:1px solid #332a5e; padding:7px 5px; text-align:left; }
+  table.adm-tbl th { color:var(--gold-400); }
+  .prize-edit-row { display:grid; grid-template-columns:26px 40px 46px 1fr 46px 46px 44px 48px 44px 40px 40px 26px; gap:4px; align-items:center; margin-bottom:6px; }
+  .cool-in { border-color:#7d6bd6 !important; } /* 등급별 쿨다운(분) 칸 */
+  .prize-edit-row.p-hidden { opacity:.5; } /* 숨김 상품 행 — 흐리게 */
+  .prize-edit-row .hid-on { background:var(--soldout,#8A8A93); color:#fff; border:none; }
+  .rem-in { border-color:#caa24a !important; color:#ffe14d !important; } /* 잔여 수량 칸 — 골드로 구분 */
+  .prize-edit-row .pmove { display:flex; flex-direction:column; gap:2px; }
+  .prize-edit-row .pmove button { height:15px; line-height:1; font-size:9px; padding:0; border:none; border-radius:4px; background:var(--purple-600); color:#fff; cursor:pointer; }
+  .prize-edit-row .pmove button:disabled { opacity:.3; cursor:default; }
+  .prize-edit-row input, .prize-edit-row select { padding:6px; border-radius:6px; border:1px solid #443a6e; background:var(--purple-950); color:#fff; font-size:12.5px; width:100%; }
+  .prize-edit-row .del { background:var(--brand-red); color:#fff; border:none; border-radius:6px; height:32px; cursor:pointer; }
+  .prize-edit-row .bdl-on { background:var(--grad-gold,#caa24a); color:#2a1d05; border:none; }
+  .bundle-block { margin:0 0 10px 22px; padding:8px 10px; border-left:2px solid #6b5bd6; background:rgba(107,91,214,.10); border-radius:8px; }
+  .bundle-block .sub-row { display:grid; grid-template-columns:24px 1fr 56px 56px 48px 44px 26px; gap:4px; align-items:center; margin-bottom:6px; }
+  .bundle-block .sub-row input { padding:6px; border-radius:6px; border:1px solid #443a6e; background:var(--purple-950); color:#fff; font-size:12.5px; width:100%; }
+  .bundle-block .sub-row .sub-idx { font-size:11px; color:#9b8fd6; text-align:center; }
+  .bundle-block .sub-row .del { background:var(--brand-red); color:#fff; border:none; border-radius:6px; height:30px; cursor:pointer; }
+  .bundle-block .adm-btn { padding:6px 2px; font-size:11px; }
+  .muted-note { font-size:11px; color:#9088b3; margin-top:4px; }
+  .toast { position:absolute; bottom:24px; left:50%; transform:translateX(-50%); background:#000d; color:#fff; padding:10px 20px; border-radius:999px; font-size:14px; z-index:99; opacity:0; transition:opacity .3s; pointer-events:none; }
+  .toast.show { opacity:1; }
+
+  /* ───── 태블릿(세로) 최적화: 화면을 꽉 채우고 콘텐츠를 비례 확대 ───── */
+  @media (min-width:600px){
+    #kiosk { max-width:1100px; }
+    body { font-size:18px; }
+    .btn-yellow { font-size:27px; padding:22px 0; width:66%; }
+    .btn-ghost { font-size:18px; padding:14px 30px; }
+    .topbar { font-size:21px; padding:20px 24px; }
+    .topbar .back { width:54px; height:54px; min-width:54px; font-size:27px; }
+    .topbar .title small { font-size:14px; }
+    .idle-brand { gap:22px; }
+    .idle-wordmark { width:440px; }
+    .idle-headline .ld-1 { font-size:144px; }
+    .idle-headline .ld-2 { font-size:184px; }
+    .idle-sub { font-size:52px; }
+    #scr-idle { gap:54px; }
+    #scr-idle .touch-banner { font-size:25px; padding:20px 48px; }
+    #ip-hero { height:300px; }
+    .ip-hero-cap { padding:24px 28px; gap:12px; }
+    .ip-hero-logo { width:220px; }
+    .ip-hero-line { font-size:34px; }
+    #ip-list { padding:22px; gap:18px; }
+    .ip-card { height:200px; }
+    .ip-card .ipinfo { padding:0 80px 0 28px; gap:8px; }
+    .ip-card .ipinfo h3 { font-size:30px; }
+    .ip-card .ipinfo .stock { font-size:18px; } .ip-card .ipinfo .stock b { font-size:30px; }
+    .ip-card::after { width:52px; height:52px; font-size:30px; right:20px; }
+    #prize-grid { padding:24px 22px; gap:20px; }
+    .prize-cell { padding:16px 16px 16px 18px; gap:16px; min-height:210px; }
+    .prize-cell .grade { width:96px; height:96px; }
+    .prize-cell .p-body { padding:16px 18px; gap:10px; }
+    .prize-cell .p-name { font-size:22px; }
+    .prize-cell .p-meta { font-size:16px; } .prize-cell .p-meta b { font-size:27px; } .prize-cell .p-meta .tk-chip { width:28px; height:19px; }
+    .prize-cell .p-sub { font-size:16px; }
+    .ticket-gauge i { width:15px; height:19px; }
+    .lineup-footer { padding:18px 0 26px; }
+    .lineup-footer .hint { font-size:22px; margin-bottom:16px; }
+    #draw-box { gap:22px; }
+    #draw-box .npc-art .npc-media { font-size:165px; }
+    #draw-box .draw-msg { font-size:23px; }
+    #scr-result { gap:18px; }
+    #scr-result h2 { font-size:96px; }
+    #result-lastone { font-size:19px; padding:12px; }
+    #result-lastone .rl-name { font-size:26px; }
+    #result-meta { font-size:18px; }
+    #result-hint { font-size:22px; }
+    #scr-result .btn-yellow { margin-top:28px; }
+  }
+</style>
+<link rel="stylesheet" href="review/v8/figure.css">
+<style>#admin-tap{display:none!important}#version-review-label{position:fixed;top:0;left:0;z-index:9999;background:#fff;color:#111;font:12px system-ui;padding:3px 8px;pointer-events:none}</style></head>
+<body><div id="version-review-label">비교용 v8 · 7ee9060 · 운영 재고 변경 없음</div>
+<div id="kiosk">
+
+  <!-- S1 대기 -->
+  <div class="screen active" id="scr-idle">
+    <video id="idle-video-blur" muted loop playsinline aria-hidden="true" tabindex="-1" style="display:none"></video>
+    <video id="idle-video" muted loop playsinline autoplay style="display:none"></video>
+    <div class="bubbles" id="bubbles"></div>
+    <div class="idle-sparkles">
+      <i style="top:15%;left:13%;font-size:14px;animation-delay:0s">✦</i>
+      <i style="top:23%;left:83%;font-size:20px;animation-delay:.5s">✦</i>
+      <i style="top:61%;left:9%;font-size:16px;animation-delay:1.1s">✦</i>
+      <i style="top:71%;left:87%;font-size:13px;animation-delay:1.7s">✦</i>
+      <i style="top:45%;left:91%;font-size:11px;animation-delay:.8s">✦</i>
+      <i style="top:12%;left:55%;font-size:12px;animation-delay:2.1s">✦</i>
+    </div>
+    <div id="admin-tap"></div>
+    <div class="idle-brand">
+      <img class="idle-wordmark" src="assets/com2us-store-logo-white.svg" alt="COM2US STORE">
+      <div id="idle-logo" class="idle-headline"><span class="ld-1">ZERATU</span><span class="ld-2">FIGURE DRAW</span></div>
+      <div class="idle-sub" id="idle-sub"></div>
+    </div>
+    <div class="touch-banner" id="idle-banner">화면을 터치하면 시작합니다.</div>
+    <div class="copyright">2026 © Com2uS Figure Draw</div>
+  </div>
+
+  <!-- S2 IP 선택 -->
+  <div class="screen" id="scr-ip">
+    <div class="topbar">
+      <button class="back" onclick="resetToIdle()">←</button>
+      <div class="title">참여할 상품을 선택하세요<small>상품을 터치하면 경품 라인업을 확인할 수 있습니다.</small></div>
+    </div>
+    <div id="ip-hero">
+      <div id="ip-hero-bg"></div>
+      <div class="ip-hero-cap">
+        <img class="ip-hero-logo" src="assets/com2us-store-logo-white.svg" alt="COM2US STORE">
+        <div class="ip-hero-line">LUCKY DRAW 제일복권 이벤트</div>
+      </div>
+    </div>
+    <div id="ip-list"></div>
+  </div>
+
+  <!-- S3 경품 라인업 -->
+  <div class="screen" id="scr-lineup">
+    <div class="topbar">
+      <button class="back" onclick="lineupBack()">←</button>
+      <div class="title" id="lineup-title"></div>
+    </div>
+    <div id="prize-grid"></div>
+    <div class="lineup-footer">
+      <div class="hint">모두 당첨! 각 등급의 마지막 1개를 뽑으면 행운상(스토어 할인 쿠폰) 추가 🍀</div>
+      <button class="btn btn-yellow" id="draw-start-btn" onclick="startDraw()">뽑기 시작</button>
+    </div>
+  </div>
+
+  <!-- S4 뽑기 -->
+  <div class="screen" id="scr-draw">
+    <div class="topbar">
+      <button class="back" onclick="drawBack()">←</button>
+      <div class="title" id="draw-ipname"></div>
+    </div>
+    <div id="draw-stage">
+      <div id="draw-box">
+        <div class="npc-art">
+          <div class="npc-media img-fallback" id="draw-npc">🎴</div>
+          <img class="npc-frame" src="assets/frames/frame-normal.png?v=2" alt="">
+        </div>
+        <div class="draw-msg">버튼을 누르면 한 장 뽑습니다!</div>
+        <button class="btn btn-yellow" id="draw-go-btn" onclick="pickDraw()">뽑기!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S6 결과 (당첨 연출 포함 — 구 S5 통합) -->
+  <div class="screen" id="scr-result">
+    <h2>🎉 당첨을 축하합니다!</h2>
+    <div id="result-card">
+      <div class="rc-img img-fallback" id="rc-img">🏆</div>
+      <img class="rc-frame" id="rc-frame" src="assets/frames/frame-purple-card.png?v=2" alt="">
+      <div class="rc-grade" id="rc-grade">A상</div>
+      <div class="rc-name" id="rc-name"></div>
+      <div class="rc-ip" id="rc-ip"></div>
+    </div>
+    <div id="result-lastone" style="display:none">🍀 행운상 추가 증정! (현장 지급)<div class="rl-name" id="rl-name"></div></div>
+    <div id="result-infobox">
+      <div id="result-meta"></div>
+      <div id="result-hint">스태프에게 이 화면을 보여주세요</div>
+    </div>
+    <button class="btn btn-yellow" onclick="resetToIdle()">처음으로</button>
+    <div id="result-countdown" class="figure-countdown" aria-live="polite"></div>
+  </div>
+
+
+  <div class="screen figure-screen" id="scr-scrolls">
+    <div class="topbar"><button class="back" onclick="resetToIdle()" aria-label="처음으로">←</button><div class="title">소환서를 선택하세요</div></div>
+    <div class="selection-status"><span id="scroll-status" aria-live="polite"></span><button onclick="randomScroll()">랜덤 선택</button></div>
+    <div class="scroll-grid" id="scroll-grid"></div>
+    <div class="figure-footer"><button class="btn btn-yellow" id="scroll-next" onclick="openSelectedScroll()" disabled>소환서 열기</button><p>12개의 소환서 중 하나를 선택해주세요</p></div>
+  </div>
+  <div class="screen figure-screen" id="scr-open">
+    <div class="topbar"><button class="back" id="open-back" onclick="if(!drawing)go('scr-scrolls')" aria-label="소환서 다시 선택">←</button><div class="title">소환서를 펼쳐주세요<span id="open-number" class="open-number"></span></div></div>
+    <div class="scroll-theatre">
+      <div class="summon-ring"></div>
+      <div class="scroll-drag" id="scroll-drag" role="button" tabindex="0" aria-label="왼쪽에서 오른쪽으로 드래그해 소환서 열기. Enter 키로도 열 수 있습니다.">
+        <video id="scroll-idle-video" class="scroll-loop-video" src="assets/figure/sacred-idle.mp4" poster="assets/figure/sacred-poster.jpg" loop playsinline preload="auto" aria-hidden="true"></video>
+        <video id="scroll-video" class="scroll-loop-video" src="assets/figure/sacred-open.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+      </div>
+      <div class="drag-hint" aria-hidden="true"><div class="drag-track"><span class="drag-trail"></span><img class="drag-handle" src="assets/figure/drag-arrow.svg" alt=""></div></div>
+      <div class="summon-particles" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i><i style="--i:8"></i><i style="--i:9"></i><i style="--i:10"></i><i style="--i:11"></i><i style="--i:12"></i><i style="--i:13"></i><i style="--i:14"></i><i style="--i:15"></i><i style="--i:16"></i><i style="--i:17"></i><i style="--i:18"></i><i style="--i:19"></i><i style="--i:20"></i><i style="--i:21"></i><i style="--i:22"></i><i style="--i:23"></i><i style="--i:24"></i><i style="--i:25"></i><i style="--i:26"></i><i style="--i:27"></i><i style="--i:28"></i><i style="--i:29"></i><i style="--i:30"></i><i style="--i:31"></i></div><div class="summon-flash"></div>
+    </div>
+    <div class="drag-guide">스크롤을 오른쪽으로 밀거나 자동 오픈 버튼을 클릭하세요</div>
+    <button class="btn btn-yellow" id="scroll-open-btn" onclick="revealScroll()">소환서 자동 오픈</button>
+  </div>
+
+  <!-- S9 관리자 -->
+  <div class="screen" id="scr-admin">
+    <div class="topbar">
+      <button class="back" onclick="resetToIdle()">←</button>
+      <div class="title">관리자 모드</div>
+    </div>
+    <div id="pin-pad">
+      <div>PIN을 입력하세요</div>
+      <div class="pin-dots" id="pin-dots"></div>
+      <div id="pin-grid"></div>
+    </div>
+    <div id="admin-body">
+      <div class="adm-tabs">
+        <button data-pane="ips" class="active" onclick="admTab('ips')">IP·상품</button>
+        <button data-pane="stock" onclick="admTab('stock')">재고</button>
+        <button data-pane="log" onclick="admTab('log')">당첨로그</button>
+        <button data-pane="settings" onclick="admTab('settings')">설정</button>
+      </div>
+      <div class="adm-pane show" id="pane-ips"></div>
+      <div class="adm-pane" id="pane-stock"></div>
+      <div class="adm-pane" id="pane-log"></div>
+      <div class="adm-pane" id="pane-settings"></div>
+    </div>
+  </div>
+
+  <!-- 연출 레이어 -->
+  <div id="fx-flash"></div>
+  <div class="confetti" id="confetti"></div>
+  <div class="toast" id="toast"></div>
+
+  <!-- 이미지 조정 모달 -->
+  <div id="adjust-modal" class="adj-modal" style="display:none">
+    <div class="adj-box">
+      <div class="adj-title">이미지 조정 (위치 · 확대 · 크롭)</div>
+      <div class="adj-preview" id="adj-preview"><img id="adj-img" alt=""></div>
+      <div class="adj-ctrl"><label>가로 위치</label><input type="range" id="adj-x" min="0" max="100" value="50" oninput="adjApplyPreview()"></div>
+      <div class="adj-ctrl"><label>세로 위치</label><input type="range" id="adj-y" min="0" max="100" value="50" oninput="adjApplyPreview()"></div>
+      <div class="adj-ctrl"><label>확대</label><input type="range" id="adj-s" min="100" max="300" value="100" oninput="adjApplyPreview()"></div>
+      <div class="muted-note">미리보기를 <b>드래그</b>해 위치 이동 · 슬라이더로 미세조정/확대 · 프레임 밖은 잘림(크롭) · 원본 보존</div>
+      <div class="adj-actions"><button class="adm-btn sec" onclick="adjReset()">초기화</button><button class="adm-btn sec" onclick="adjClose()">취소</button><button class="adm-btn pri" onclick="adjSave()">적용</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════ 저장소 키 ════════════════ */
+const K_CFG='figure-review-v8.config.v1', K_STOCK='figure-review-v8.stock.v1', K_LOG='figure-review-v8.log.v1', K_COOL='figure-review-v8.cooldown.v1';
+const K_STATE='figure-review-v8.draw-state.v1';
+const APP_VER='figure-v8';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
+
+/* ════════════════ 기본 설정 (관리자 미설정 시) ════════════════ */
+function defaultConfig(){
+  return {
+    eventName:'제라투 피규어 드로우', figureProbabilityEnabled:false, figureWinPercent:10, bgmMode:'screen', bgmSingleSlot:'idle', adminPin:'0000', idleTimeoutSec:30, muted:false, npcs:[], idleVideos:[], cooldownMin:15,
+    showLineup:true,   // S3 경품 라인업 표시 (false = S1/S2 → 뽑기 직행)
+    drawIdleSec:5,     // S4 뽑기 전 무입력 복귀(초, 0=끔) — 뽑기 확정 후에는 미적용
+    ips:[{
+      id:'ip1', name:'제라투 소환 이벤트', heroImageKey:null,
+      lastOne:{name:'',imageKey:null},
+      prizes:[
+        {grade:'피규어',name:'제라투 피규어',imageKey:null,count:0,tier:'high',kind:'figure'},
+        {grade:'참가상',name:'참가상',imageKey:null,count:0,tier:'normal',kind:'participation'},
+      ],
+    }],
+  };
+}
+
+/* ════════════════ 설정/재고/로그 로드·저장 ════════════════ */
+let cfg = loadCfg(), stock = loadStock(), logArr = loadLog();
+function loadCfg(){ try{ const r=localStorage.getItem(K_CFG); if(r) return JSON.parse(r);}catch(e){} return defaultConfig(); }
+function saveCfg(){ try{ localStorage.setItem(K_CFG, JSON.stringify(cfg)); return true; }catch(e){ return false; } }
+/* 번들 상품: prize.bundle=true & prize.subs=[{name,imageKey,count}]. 재고 칸은 단순=숫자, 번들=하위별 배열 */
+function isBundle(p){ return !!(p && p.bundle && Array.isArray(p.subs) && p.subs.length); }
+function prizeFreshStock(p){ return isBundle(p) ? p.subs.map(s=>+s.count||0) : (+p.count||0); }
+function cellRemain(cell){ return Array.isArray(cell) ? cell.reduce((a,b)=>a+(+b||0),0) : (+cell||0); }
+function prizeRemain(ip,i){ const arr=stock[ip.id]; return arr ? cellRemain(arr[i]) : 0; }
+function prizeTotal(p){ return isBundle(p) ? p.subs.reduce((a,s)=>a+(+s.count||0),0) : (+p.count||0); }
+function freshStock(){ const s={}; cfg.ips.forEach(ip=> s[ip.id]=ip.prizes.map(prizeFreshStock)); return s; }
+function loadStock(){
+  try{ const state=JSON.parse(localStorage.getItem(K_STATE)); if(state&&state.stock)return state.stock; }catch(e){}
+  try{ const r=localStorage.getItem(K_STOCK); if(r){ const s=JSON.parse(r); return s; } }catch(e){}
+  return freshStock();
+}
+function saveStock(){ try{ localStorage.setItem(K_STATE,JSON.stringify({stock,log:logArr})); return true; }catch(e){ toast('재고 저장 실패: 저장 공간을 확인해주세요'); return false; } }
+function loadLog(){ try{ const state=JSON.parse(localStorage.getItem(K_STATE)); if(state&&Array.isArray(state.log))return state.log; }catch(e){} try{ const r=localStorage.getItem(K_LOG); if(r) return JSON.parse(r);}catch(e){} return []; }
+function saveLog(){ return saveStock(); }
+/* 설정과 재고 정합성 보정 (등급 수가 바뀐 IP는 재고 배열 맞춤) */
+function reconcileStock(){
+  let changed=false;
+  cfg.ips.forEach(ip=>{
+    if(!Array.isArray(stock[ip.id]) || stock[ip.id].length!==ip.prizes.length){
+      stock[ip.id]=ip.prizes.map(prizeFreshStock); changed=true;
+    } else {
+      /* 각 칸 모양(번들 배열↔숫자, 하위 길이) 보정 */
+      ip.prizes.forEach((p,i)=>{
+        const cell=stock[ip.id][i];
+        if(isBundle(p)){ if(!Array.isArray(cell)||cell.length!==p.subs.length){ stock[ip.id][i]=prizeFreshStock(p); changed=true; } }
+        else { if(typeof cell!=='number'){ stock[ip.id][i]=prizeFreshStock(p); changed=true; } }
+      });
+    }
+  });
+  Object.keys(stock).forEach(id=>{ if(!cfg.ips.find(ip=>ip.id===id)){ delete stock[id]; changed=true; } });
+  if(changed) saveStock();
+}
+/* 잔여/전체 집계 — 숨김(hidden) 상품은 참여자 노출·추첨 대상이 아니므로 제외 */
+function remainOf(ip){ return (stock[ip.id]||[]).reduce((a,b,i)=>a+((ip.prizes[i]&&ip.prizes[i].hidden)?0:cellRemain(b)),0); }
+function totalOf(ip){ return ip.prizes.reduce((a,p)=>a+(p.hidden?0:prizeTotal(p)),0); }
+function totalRemainAll(){ return cfg.ips.reduce((a,ip)=>a+remainOf(ip),0); }
+
+/* ── 상위 등급 재당첨 방지(쿨다운) ──
+   키: "ipId|등급명" → 만료시각(epoch ms). localStorage에 유지(새로고침 안전), .kuji 백업엔 미포함.
+   cfg.cooldownMin(분): 기본 15, 0 = 기능 끔. 기존 설치(필드 없음)는 15로 간주 */
+let cooldowns = loadCooldowns();
+function loadCooldowns(){ try{ const r=localStorage.getItem(K_COOL); if(r) return JSON.parse(r); }catch(e){} return {}; }
+function saveCooldowns(){ try{ localStorage.setItem(K_COOL, JSON.stringify(cooldowns)); }catch(e){} }
+function cooldownMs(p){ // 등급별 coolMin 우선, 없으면 설정 탭 기본값(기본 15분). 0=끔
+  const base = cfg.cooldownMin==null ? 15 : Math.max(0, parseInt(cfg.cooldownMin)||0);
+  const m = (p && p.coolMin!=null) ? Math.max(0, parseInt(p.coolMin)||0) : base;
+  return m*60000;
+}
+function isCooling(ip,p){ if(!p || p.tier!=='high' || !cooldownMs(p)) return false; const u=cooldowns[ip.id+'|'+p.grade]; return !!u && u>Date.now(); }
+function coolLeftMin(ip,p){ const u=cooldowns[ip.id+'|'+p.grade]||0; return Math.max(0, Math.ceil((u-Date.now())/60000)); }
+function startCooldown(ip,p){ if(!p || p.tier!=='high' || !cooldownMs(p)) return; cooldowns[ip.id+'|'+p.grade]=Date.now()+cooldownMs(p); saveCooldowns(); }
+
+/* ════════════════ IndexedDB 이미지/미디어 저장 ════════════════ */
+let idb=null;
+function openIDB(){ return new Promise((res)=>{ const rq=indexedDB.open('figure-draw-media',1);
+  rq.onupgradeneeded=()=>{ rq.result.createObjectStore('media'); };
+  rq.onsuccess=()=>{ idb=rq.result; res(idb); }; rq.onerror=()=>res(null); }); }
+function idbPut(key,val){ return new Promise((res)=>{ try{ if(!idb)return res(false); const tx=idb.transaction('media','readonly'); tx.objectStore('media').put(val,key); tx.oncomplete=()=>res(true); tx.onerror=()=>res(false); tx.onabort=()=>res(false); }catch(e){ res(false); } }); }
+function idbGet(key){ return new Promise((res)=>{ if(!idb||!key)return res(null); const tx=idb.transaction('media','readonly'); const rq=tx.objectStore('media').get(key); rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null); }); }
+/* iOS 안전: 미디어(영상·BGM·효과음·NPC)는 ArrayBuffer로 저장하고 읽을 때 Blob 재구성. iOS Safari/PWA의 IndexedDB Blob 저장·재생 결함 회피 */
+function fileToArrayBuffer(f){ return new Promise(r=>{ const fr=new FileReader(); fr.onload=()=>r(fr.result); fr.onerror=()=>r(null); fr.readAsArrayBuffer(f); }); }
+function mediaBlob(v){ if(!v) return null; if(v instanceof Blob) return v; if(v.buf){ try{ return new Blob([v.buf],{type:v.type||'application/octet-stream'}); }catch(e){ return null; } } return null; }
+function idbDel(key){ return new Promise((res)=>{ if(!idb||!key)return res(); const tx=idb.transaction('media','readonly'); tx.objectStore('media').delete(key); tx.oncomplete=()=>res(); tx.onerror=()=>res(); }); }
+/* 백업용: 전체 항목 열거 / 스토어 비우기 */
+function idbAll(){ return new Promise((res)=>{ try{ if(!idb)return res([]); const tx=idb.transaction('media','readonly'); const st=tx.objectStore('media'); const out=[]; const rq=st.openCursor(); rq.onsuccess=()=>{ const c=rq.result; if(c){ out.push({key:c.key,value:c.value}); c.continue(); } else res(out); }; rq.onerror=()=>res(out); }catch(e){ res([]); } }); }
+/* 키 전용 커서 — iPad WebKit에서 getAllKeys()가 빈 배열을 돌려주는 결함 회피 (커서는 idbAll로 실기 검증됨) */
+function idbKeys(){ return new Promise((res)=>{ try{ if(!idb)return res([]);
+  const st=idb.transaction('media','readonly').objectStore('media'); const out=[];
+  const rq=(typeof st.openKeyCursor==='function') ? st.openKeyCursor() : st.openCursor();
+  rq.onsuccess=()=>{ const c=rq.result; if(c){ out.push(c.key); c.continue(); } else res(out); };
+  rq.onerror=()=>res(out);
+}catch(e){ res([]); } }); }
+function idbClear(){ return new Promise((res)=>{ try{ if(!idb)return res(false); const tx=idb.transaction('media','readonly'); tx.objectStore('media').clear(); tx.oncomplete=()=>res(true); tx.onerror=()=>res(false); }catch(e){ res(false); } }); }
+
+/* 이미지 캐시(dataURL) — 부팅 시 config가 참조하는 모든 키 로드 */
+const imgCache={};
+async function loadAllImages(){
+  const keys=new Set();
+  if(cfg.heroBannerKey)keys.add(cfg.heroBannerKey);
+  cfg.ips.forEach(ip=>{ if(ip.heroImageKey)keys.add(ip.heroImageKey); if(ip.lastOne&&ip.lastOne.imageKey)keys.add(ip.lastOne.imageKey); ip.prizes.forEach(p=>{ if(p.imageKey)keys.add(p.imageKey); if(isBundle(p)) p.subs.forEach(s=>{ if(s.imageKey)keys.add(s.imageKey); }); }); });
+  for(const k of keys){ imgCache[k]=await idbGet(k); }
+}
+/* img 또는 fallback 마크업 */
+function imgTag(key, cls, emoji){
+  const src=key?imgCache[key]:null;
+  if(src){
+    const a=cfg.imgAdjust&&cfg.imgAdjust[key];
+    const st=a?` style="object-position:${a.x}% ${a.y}%;transform:scale(${a.scale});transform-origin:${a.x}% ${a.y}%"`:'';
+    return `<div class="${cls} imgadj-wrap"><img src="${src}"${st} alt=""></div>`;
+  }
+  return `<div class="${cls} img-fallback">${emoji||'🎁'}</div>`;
+}
+
+/* ════════════════ 화면 전환 + 30초 유휴 ════════════════ */
+let currentScreen='scr-idle', idleTimer=null, idleScreens=['scr-ip','scr-lineup','scr-result'];
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  currentScreen=id;
+  manageIdle();
+}
+function manageIdle(){
+  clearTimeout(idleTimer);
+  if(idleScreens.includes(currentScreen)){
+    idleTimer=setTimeout(resetToIdle, (cfg.idleTimeoutSec||30)*1000);
+  } else if(currentScreen==='scr-draw'){
+    // S4는 별도 짧은 복귀(기본 5초, 0=끔) — 뽑기 전 상태에만. 추첨 확정(drawing) 후에는 미적용
+    const s = cfg.drawIdleSec==null ? 5 : Math.max(0, parseInt(cfg.drawIdleSec)||0);
+    if(s>0) idleTimer=setTimeout(()=>{ if(currentScreen==='scr-draw' && !drawing) resetToIdle(); }, s*1000);
+  }
+}
+function resetIdle(){ if(idleScreens.includes(currentScreen) || currentScreen==='scr-draw') manageIdle(); }
+document.getElementById('kiosk').addEventListener('pointerdown', resetIdle, true);
+
+/* ════════════════ S1 대기 ════════════════ */
+let curIp=null, drawing=false, lastResult=null, lastNpcId=null, lastIdleVideoId=null;
+let idleMediaEpoch=0;
+async function playIdleVideo(){
+  const epoch=++idleMediaEpoch;
+  const v=document.getElementById('idle-video');
+  const background=document.getElementById('idle-video-blur');
+  v.pause();background.pause();background.removeAttribute('src');
+  if(v._ourl){ try{ URL.revokeObjectURL(v._ourl); }catch(e){} v._ourl=null; }
+  const vids=cfg.idleVideos||[];
+  let blob=null;
+  if(vids.length){
+    let pool=vids;
+    if(vids.length>1 && lastIdleVideoId){ const f=vids.filter(x=>x.id!==lastIdleVideoId); if(f.length) pool=f; }
+    const pick=pool[Math.floor(Math.random()*pool.length)];
+    lastIdleVideoId=pick.id;
+    blob=await idbGet('idlevid_'+pick.id);
+  }
+  if(epoch!==idleMediaEpoch)return;
+  if(blob){ try{ let src; if(typeof blob==='string'){ src=blob; } else { const b=mediaBlob(blob); if(!b) throw 0; src=v._ourl=URL.createObjectURL(b); } v.src=src; v.style.display='block'; v.play().catch(()=>{}); }catch(e){ v.style.display='none'; } }
+  else { v.src='review/v8/idle.mp4'; v.style.display='block'; v.play().catch(()=>{}); }
+  if(v.style.display!=='none'){
+    background.src=v.src;background.style.display='block';
+    if(currentScreen==='scr-idle')background.play().catch(()=>{});else v.pause();
+  }else background.style.display='none';
+}
+async function bootIdle(){
+  await playIdleVideo();
+  refreshIdleSoldout();
+}
+function refreshIdleSoldout(){
+  const sold=totalRemainAll()===0;
+  document.getElementById('scr-idle').classList.toggle('soldout', sold);
+  document.getElementById('idle-banner').textContent = sold ? '금일 이벤트가 종료되었습니다.' : '화면을 터치하면 시작합니다.';
+}
+document.getElementById('scr-idle').addEventListener('click', e=>{
+  if(e.target.id==='admin-tap') return;     // 관리자 진입 영역
+  if(totalRemainAll()===0){ refreshIdleSoldout(); return; }
+  startBgm('select');
+  if(cfg.ips.filter(ip=>remainOf(ip)>0).length===1 && cfg.ips.length===1){ enterGame(cfg.ips[0]); }
+  else goIp();
+});
+/* IP 확정 후 진입 분기: S3 표시(기본) → 라인업, 숨김 → 뽑기 화면 직행 */
+function lineupOn(){ return cfg.showLineup!==false; }
+function enterGame(ip){ curIp=ip; if(lineupOn()){ renderLineup(); go('scr-lineup'); } else { startDraw(); } }
+
+/* ════════════════ S2 IP 선택 ════════════════ */
+function goIp(){ renderIp(); go('scr-ip'); }
+/* S3 뒤로가기: IP가 1개면 S2를 건너뛰었으므로 대기화면(S1)으로, 여러 개면 다시 렌더한 S2로 */
+function lineupBack(){ if(cfg.ips.length<=1){ resetToIdle(); } else { renderIp(); go('scr-ip'); } }
+/* S4 뒤로가기: S3 표시 중이면 라인업으로, 숨김이면 S3를 건너뛰었으므로 S2(IP 1개면 S1)로 */
+function drawBack(){ if(lineupOn()){ renderLineup(); go('scr-lineup'); } else if(cfg.ips.length>1){ renderIp(); go('scr-ip'); } else { resetToIdle(); } }
+async function renderIp(){
+  // 상단 히어로 배경: 전용 배너 우선, 없으면 첫 IP 배너, 그것도 없으면 기본. 타이틀은 고정 마크업.
+  const heroKey = cfg.heroBannerKey || (cfg.ips[0]&&cfg.ips[0].heroImageKey);
+  document.getElementById('ip-hero-bg').innerHTML = imgTag(heroKey, '', '🎁');
+  const list=document.getElementById('ip-list'); list.innerHTML='';
+  cfg.ips.forEach(ip=>{
+    const remain=remainOf(ip), total=totalOf(ip), sold=remain===0;
+    const card=document.createElement('div');
+    card.className='ip-card'+(sold?' soldout':'');
+    card.innerHTML=`
+      <div class="soldout-badge">SOLD OUT</div>
+      ${imgTag(ip.heroImageKey,'ipimg', ip.name.slice(0,2))}
+      <div class="ipinfo">
+        <h3>${esc(ip.name)}</h3>
+        <div class="stock">잔여 <b>${remain}</b> / ${total}</div>
+        <div class="gauge"><i style="width:${total?remain/total*100:0}%"></i></div>
+      </div>`;
+    if(!sold) card.onclick=()=>{ enterGame(ip); };
+    list.appendChild(card);
+  });
+}
+
+/* ════════════════ S3 경품 라인업 ════════════════ */
+function renderLineup(){
+  const remain=remainOf(curIp), total=totalOf(curIp);
+  document.getElementById('lineup-title').innerHTML=`${esc(curIp.name)} <em>잔여 ${remain}/${total}</em>`;
+  const grid=document.getElementById('prize-grid'); grid.innerHTML='';
+  curIp.prizes.forEach((p,i)=>{
+    if(p.hidden) return; // 숨김 상품은 라인업 미표시
+    const left=prizeRemain(curIp,i), tot=prizeTotal(p), out=left===0;
+    let g='';
+    const onCount=Math.min(left,10);
+    for(let k=0;k<Math.min(tot,10);k++) g+=`<i class="${k<onCount?'on':''}"></i>`;
+    const cell=document.createElement('div');
+    cell.className='prize-cell'+(out?' out':'');
+    cell.innerHTML=`
+      <div class="grade" data-tone="${gradeTone(p.grade)}">${esc(p.grade)}</div>
+      <div class="out-badge">품절</div>
+      ${imgTag(p.imageKey,'p-img', gradeEmoji(p.tier))}
+      <div class="p-body">
+        <div class="p-name">${esc(p.name)}</div>
+        <div class="p-meta"><span class="tk-chip"></span>잔여 <b class="${left<=1?'low':''}">${left}</b><span class="tot">/ ${tot}</span></div>
+        <div class="ticket-gauge">${g}</div>
+      </div>`;
+    grid.appendChild(cell);
+  });
+  // LAST ONE
+  if(curIp.lastOne && curIp.lastOne.name){
+    const lo=document.createElement('div'); lo.className='prize-cell lucky';
+    lo.innerHTML=`<div class="grade" data-tone="lucky">행운상</div>${imgTag(curIp.lastOne.imageKey,'p-img','🍀')}
+      <div class="p-body"><div class="p-name">${esc(curIp.lastOne.name)}</div><div class="p-sub">행운상 · 각 등급 마지막 1개</div></div>`;
+    grid.appendChild(lo);
+  }
+  const btn=document.getElementById('draw-start-btn'); btn.disabled = remain===0;
+}
+function gradeEmoji(tier){ return tier==='high'?'🏆':'🎁'; }
+/* 등급명 → 디자인 시스템 등급 색(tone) 매핑 (A상 골드·B상 블루 …) */
+function gradeTone(grade){ const c=(grade||'').trim().charAt(0).toUpperCase(); const m={A:'a',B:'b',C:'c',D:'d',E:'e',F:'f'}; if(m[c])return m[c]; if(/스페셜|special/i.test(grade))return 'special'; return 'a'; }
+
+/* ════════════════ S4 뽑기 ════════════════ */
+function startDraw(){
+  if(remainOf(curIp)===0) return;
+  drawing=false;
+  startBgm('play');
+  document.getElementById('draw-ipname').textContent=curIp.name;
+  renderDrawBox();
+  go('scr-draw');
+}
+async function renderDrawBox(){
+  const btn=document.getElementById('draw-go-btn'); if(btn) btn.disabled=false;
+  const el=document.getElementById('draw-npc');
+  if(el._ourl){ try{ URL.revokeObjectURL(el._ourl); }catch(e){} el._ourl=null; }
+  const npcs=cfg.npcs||[];
+  if(!npcs.length){ el.innerHTML='🎴'; return; }
+  // 매 뽑기마다 랜덤 — 단, 직전에 나온 NPC는 연속으로 제외
+  let pool=npcs;
+  if(npcs.length>1 && lastNpcId){ const f=npcs.filter(n=>n.id!==lastNpcId); if(f.length) pool=f; }
+  const pick=pool[Math.floor(Math.random()*pool.length)];
+  lastNpcId=pick.id;
+  const blob=await idbGet('npc_'+pick.id);
+  const nb=(typeof blob==='string')?dataURLtoBlob(blob):mediaBlob(blob);
+  if(!nb){ el.innerHTML='🎴'; return; }
+  const url=(el._ourl=URL.createObjectURL(nb));
+  el.innerHTML = pick.type==='video'
+    ? `<video src="${url}" muted loop playsinline autoplay></video>`
+    : `<img src="${url}" alt="">`;
+}
+/* 추첨 원자 처리 — 단일 버튼, 연타 방지 */
+function pickDraw(){
+  if(drawing) return;
+  drawing=true;
+  clearTimeout(idleTimer); // S4 뽑기 전 복귀 타이머 해제 — 추첨 확정 후 복귀 금지
+  const btn=document.getElementById('draw-go-btn'); if(btn) btn.disabled=true;
+  playSfx('pick');
+  // 비복원 추첨 (랜덤·100% 당첨) — 번들은 하위까지 평탄화하여 재고 비례로 추첨
+  // 쿨다운 중인 상위 등급은 풀에서 제외하되, 제외 후 풀이 비면 쿨다운 무시(100% 당첨 보장)
+  const arr=stock[curIp.id];
+  const buildPool=(ignoreCool)=>{
+    const pool=[];
+    arr.forEach((cell,i)=>{
+      const pz=curIp.prizes[i];
+      if(pz && pz.hidden) return; // 숨김 상품은 폴백에서도 추첨 제외
+      if(!ignoreCool && isCooling(curIp, pz)) return;
+      if(Array.isArray(cell)){ cell.forEach((c,j)=>{ for(let k=0;k<c;k++) pool.push({i,sub:j}); }); }
+      else { for(let k=0;k<cell;k++) pool.push({i,sub:null}); }
+    });
+    return pool;
+  };
+  let pool=buildPool(false); if(!pool.length) pool=buildPool(true);
+  if(!pool.length){ // 노출 상품이 모두 소진 (예: 뽑기 화면 도중 숨김 전환) — 안전 복귀
+    drawing=false; if(btn) btn.disabled=false; toast('추첨 가능한 상품이 없습니다'); go('scr-lineup'); renderLineup(); return;
+  }
+  const hit=pool[Math.floor(Math.random()*pool.length)];
+  const idx=hit.i, sub=hit.sub;
+  if(sub==null) arr[idx]--; else arr[idx][sub]--;
+  saveStock();
+  const prize=curIp.prizes[idx];
+  // 번들이면 실제 받은 하위상품으로 표시 정보 구성
+  const won = (sub!=null && isBundle(prize)) ? prize.subs[sub] : null;
+  const wonName = won ? won.name : prize.name;
+  const wonImageKey = won ? won.imageKey : prize.imageKey;
+  // 행운상: 이 등급(번들이면 전체 하위 합계)의 마지막 1개를 뽑은 경우 (스토어 할인 쿠폰 현장 지급)
+  const isLucky = cellRemain(arr[idx])===0 && !!(curIp.lastOne && curIp.lastOne.name);
+  const serial = nextSerial();
+  startCooldown(curIp, prize); // 상위 등급이면 재당첨 방지 시작
+  logArr.push({ timestamp:new Date().toISOString(), ipId:curIp.id, ipName:curIp.name, grade:prize.grade, prizeName: won ? (prize.name+' - '+won.name) : prize.name, isLastOne:isLucky, luckyGrade:isLucky?prize.grade:'', serial }); saveLog();
+  lastResult={ ip:curIp, prize, isLucky, serial, high:(prize.tier==='high'), wonName, wonImageKey };
+  setTimeout(()=>showResult(), 360);
+}
+function nextSerial(){
+  const today=dateKey(new Date());
+  const n=logArr.filter(l=>dateKey(new Date(l.timestamp))===today).length;
+  return n+1;
+}
+function dateKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+/* ════════════════ S6 결과 (당첨 연출 포함 — 구 S5 통합) ════════════════
+   뽑기 직후 결과 화면이 연출과 함께 등장: 카드 cardIn 애니메이션 +
+   상위/행운상 = specialFx(번개·색종이·업로드 스페셜 효과음), 일반 = 일반당첨음 */
+function showResult(){
+  renderResult();
+  go('scr-result');
+  const {high, isLucky}=lastResult;
+  if(high || isLucky) specialFx(); else playSfx('win');
+}
+function renderResult(){
+  const {ip, prize, isLucky, serial, high, wonName, wonImageKey}=lastResult;
+  document.getElementById('rc-frame').src='assets/frames/frame-'+(high?'gold':'purple')+'-card.png?v=2';
+  const rcg=document.getElementById('rc-grade'); rcg.textContent=prize.grade; rcg.dataset.tone=gradeTone(prize.grade);
+  document.getElementById('rc-img').outerHTML = imgTag(wonImageKey!=null?wonImageKey:prize.imageKey,'rc-img', gradeEmoji(prize.tier)).replace('class="','id="rc-img" class="');
+  document.getElementById('rc-name').textContent = wonName!=null?wonName:prize.name;
+  document.getElementById('rc-ip').textContent=ip.name;
+  const lo=document.getElementById('result-lastone');
+  if(isLucky){ lo.style.display='block'; document.getElementById('rl-name').textContent=ip.lastOne.name; document.getElementById('result-card').classList.add('lastone-extra'); }
+  else { lo.style.display='none'; document.getElementById('result-card').classList.remove('lastone-extra'); }
+  const t=new Date();
+  document.getElementById('result-meta').innerHTML=`${esc(ip.name)} / ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}:${String(t.getSeconds()).padStart(2,'0')} / 일련번호 <b>#${serial}</b>`;
+}
+function resetToIdle(){
+  drawing=false; lastResult=null; curIp=null;
+  refreshIdleSoldout(); startBgm('idle'); playIdleVideo();
+  go('scr-idle');
+}
+
+/* ════════════════ 연출 효과 ════════════════ */
+function specialFx(){
+  const k=document.getElementById('kiosk');
+  const f=document.getElementById('fx-flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+  k.classList.remove('shake'); void k.offsetWidth; k.classList.add('shake');
+  for(let i=0;i<5;i++){ const b=document.createElement('div'); b.className='bolt'; b.style.left=(10+i*20)+'%'; b.style.transform='rotate('+(-12+i*6)+'deg)'; k.appendChild(b); void b.offsetWidth; b.classList.add('go'); setTimeout(()=>b.remove(),700); }
+  fireConfetti(); playSfx('fanfare');
+}
+function fireConfetti(){
+  const wrap=document.getElementById('confetti'); const colors=['#FFD84D','#9B6BF0','#FF2E24','#3B82E0','#46A63F','#F2A800'];
+  for(let i=0;i<46;i++){ const c=document.createElement('i'); c.style.left=Math.random()*100+'%'; c.style.background=colors[i%colors.length]; c.style.animationDuration=(1.2+Math.random()*1.5)+'s'; c.style.animationDelay=(Math.random()*.4)+'s'; wrap.appendChild(c); setTimeout(()=>c.remove(),3400); }
+}
+(function makeBubbles(){ const wrap=document.getElementById('bubbles'); for(let i=0;i<14;i++){ const b=document.createElement('i'); const s=14+Math.random()*60; b.style.width=b.style.height=s+'px'; b.style.left=Math.random()*100+'%'; b.style.animationDuration=(7+Math.random()*9)+'s'; b.style.animationDelay=(-Math.random()*10)+'s'; wrap.appendChild(b);} })();
+
+/* ════════════════ 사운드 (효과음=WebAudio 합성, BGM=업로드 파일) ════════════════ */
+let actx=null; function audioCtx(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return actx; }
+function tone(freq,dur,type,vol,delay){ const c=audioCtx(); if(!c||cfg.muted)return; const t=c.currentTime+(delay||0); const o=c.createOscillator(),g=c.createGain(); o.type=type||'sine'; o.frequency.value=freq; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol||.2,t+.01); g.gain.exponentialRampToValueAtTime(.001,t+dur); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur); }
+/* 효과음: 업로드 파일 우선, 없으면 기본 합성음(WebAudio) 폴백
+   ※ iOS는 blob <audio>를 재생 완료 후 되감아 재생하면 두 번째부터 무음이 되는 결함이 있어,
+   업로드 효과음은 WebAudio 버퍼로 디코드해 매번 새 소스로 재생한다(재사용 없음 = 항상 소리남) */
+const sfxEl={ pick:new Audio(), win:new Audio(), special:new Audio() }; const sfxUrls={}; const sfxBuf={};
+async function sfxArrayBuffer(d){ try{ if(typeof d==='string'){ const b=dataURLtoBlob(d); return b? await b.arrayBuffer():null; } if(d&&d.buf) return d.buf.slice(0); const b=mediaBlob(d); return b? await b.arrayBuffer():null; }catch(e){ return null; } }
+async function loadSfx(){ for(const k of ['pick','win','special']){ const d=await idbGet('sfx_'+k); if(!d){ delete sfxBuf[k]; sfxEl[k].src=''; continue; }
+  try{ const ab=await sfxArrayBuffer(d); const c=audioCtx(); if(ab&&c){ sfxBuf[k]=await c.decodeAudioData(ab); sfxEl[k].src=''; continue; } }catch(e){}
+  /* 디코드 실패 시에만 <audio> 폴백 */
+  delete sfxBuf[k]; if(sfxUrls[k]){try{URL.revokeObjectURL(sfxUrls[k]);}catch(e){}}
+  if(typeof d==='string'){ sfxEl[k].src=d; } else { const b=mediaBlob(d); if(b) sfxEl[k].src=sfxUrls[k]=URL.createObjectURL(b); } } }
+function playSfx(kind){
+  if(cfg.muted)return;
+  const slot={pick:'pick',win:'win',fanfare:'special'}[kind];
+  const c=audioCtx(); if(c&&c.state==='suspended'){ try{c.resume();}catch(e){} }
+  const buf=slot&&sfxBuf[slot];
+  if(buf&&c){ try{ const s=c.createBufferSource(), g=c.createGain(); s.buffer=buf; g.gain.value=.8; s.connect(g); g.connect(c.destination); s.start(); return; }catch(e){} }
+  const a=slot&&sfxEl[slot];
+  if(a&&a.src){ try{ a.pause(); a.currentTime=0; a.volume=.8; const p=a.play(); if(p&&p.catch)p.catch(()=>{}); return; }catch(e){} }
+  // 폴백: 기본 합성음
+  if(kind==='pick'){ tone(660,.12,'triangle',.18); }
+  else if(kind==='win'){ tone(523,.18,'sine',.2); tone(784,.25,'sine',.18,.12); }
+  else if(kind==='fanfare'){ [523,659,784,1047].forEach((f,i)=>tone(f,.3,'sawtooth',.16,i*.11)); tone(1047,.5,'sine',.14,.5); }
+}
+/* BGM: 화면별 3슬롯 (대기 / 선택 / 뽑기), 루핑 */
+const bgmEl={ idle:new Audio(), select:new Audio(), play:new Audio() }; Object.values(bgmEl).forEach(a=>a.loop=true); let curBgm=null; const bgmUrls={};
+async function loadBgm(){ for(const slot of ['idle','select','play']){ const d=await idbGet('bgm_'+slot); if(!d)continue; if(bgmUrls[slot]){try{URL.revokeObjectURL(bgmUrls[slot]);}catch(e){}} if(typeof d==='string'){ bgmEl[slot].src=d; } else { const b=mediaBlob(d); if(b) bgmEl[slot].src=bgmUrls[slot]=URL.createObjectURL(b); } } }
+function startBgm(slot){ if(curBgm&&curBgm!==slot){ try{bgmEl[curBgm].pause();}catch(e){} } curBgm=slot; if(cfg.muted)return; const a=bgmEl[slot]; if(a&&a.src){ a.volume=.4; a.play().catch(()=>{}); } }
+function applyMute(){ if(cfg.muted){ Object.values(bgmEl).forEach(a=>{try{a.pause();}catch(e){}});} else if(curBgm){ startBgm(curBgm); } }
+
+/* ════════════════ S9 관리자 ════════════════ */
+let tapCount=0, tapTimer=null, pinBuf='';
+document.getElementById('admin-tap').addEventListener('click', ()=>{
+  tapCount++; clearTimeout(tapTimer); tapTimer=setTimeout(()=>tapCount=0,3000);
+  if(tapCount>=5){ tapCount=0; openAdmin(); }
+});
+function openAdmin(){ pinBuf=''; renderPinDots(); document.getElementById('pin-pad').style.display='flex'; document.getElementById('admin-body').classList.remove('show'); go('scr-admin'); }
+function renderPinDots(){ document.getElementById('pin-dots').textContent='●'.repeat(pinBuf.length)+'○'.repeat(Math.max(0,4-pinBuf.length)); }
+(function buildPin(){ const g=document.getElementById('pin-grid'); ['1','2','3','4','5','6','7','8','9','⌫','0','✓'].forEach(k=>{ const b=document.createElement('button'); b.textContent=k; b.onclick=()=>pinKey(k); g.appendChild(b); }); })();
+function pinKey(k){ if(k==='⌫'){ pinBuf=pinBuf.slice(0,-1); } else if(k==='✓'){ checkPin(); return; } else if(pinBuf.length<8){ pinBuf+=k; } renderPinDots(); if(pinBuf.length===String(cfg.adminPin).length) checkPin(); }
+function checkPin(){ if(pinBuf===String(cfg.adminPin)){ document.getElementById('pin-pad').style.display='none'; document.getElementById('admin-body').classList.add('show'); admTab('ips'); } else { toast('PIN이 올바르지 않습니다'); pinBuf=''; renderPinDots(); } }
+function admTab(name){ document.querySelectorAll('.adm-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.pane===name)); document.querySelectorAll('.adm-pane').forEach(p=>p.classList.remove('show')); document.getElementById('pane-'+name).classList.add('show'); if(name==='ips')renderAdmIps(); if(name==='stock')renderAdmStock(); if(name==='log')renderAdmLog(); if(name==='settings')renderAdmSettings(); }
+
+/* IP·상품 편집 */
+function renderAdmIps(){
+  const root=document.getElementById('pane-ips'); root.innerHTML='';
+  cfg.ips.forEach((ip,ii)=>{
+    const card=document.createElement('div'); card.className='adm-card';
+    let prizeRows='';
+    ip.prizes.forEach((p,pi)=>{
+      const bundled=isBundle(p);
+      prizeRows+=`<div class="prize-edit-row${p.hidden?' p-hidden':''}">
+        <div class="pmove"><button onclick="admMovePrize(${ii},${pi},-1)" ${pi===0?'disabled':''} title="위로">▲</button><button onclick="admMovePrize(${ii},${pi},1)" ${pi===ip.prizes.length-1?'disabled':''} title="아래로">▼</button></div>
+        <input value="${escAttr(p.grade)}" onchange="admEditPrize(${ii},${pi},'grade',this.value)" placeholder="등급">
+        <select onchange="admEditPrize(${ii},${pi},'tier',this.value)"><option value="normal"${p.tier!=='high'?' selected':''}>일반</option><option value="high"${p.tier==='high'?' selected':''}>상위</option></select>
+        <input value="${escAttr(p.name)}" onchange="admEditPrize(${ii},${pi},'name',this.value)" placeholder="${bundled?'번들명 (예: 가디언스클럽 랜덤)':'경품명'}">
+        ${bundled
+          ? `<input type="number" value="${prizeTotal(p)}" title="하위 수량 합계(자동)" disabled style="opacity:.55">`
+          : `<input type="number" min="0" value="${p.count}" title="초기 수량 (저장 버튼으로 커밋)" onchange="admEditPrize(${ii},${pi},'count',this.value)">`}
+        ${bundled
+          ? `<input type="number" class="rem-in" value="${prizeRemain(ip,pi)}" title="잔여 합계(하위에서 조정)" disabled style="opacity:.55">`
+          : `<input type="number" class="rem-in" min="0" value="${prizeRemain(ip,pi)}" title="잔여 수량 — 수정 시 즉시 반영" onchange="admEditRemain(${ii},${pi},this.value)">`}
+        ${p.tier==='high'
+          ? `<input type="number" class="cool-in" min="0" value="${p.coolMin==null?'':p.coolMin}" placeholder="${cfg.cooldownMin==null?15:cfg.cooldownMin}" title="이 등급 쿨다운(분) — 비우면 설정 탭 기본값, 0=이 등급만 끔" onchange="admEditPrize(${ii},${pi},'coolMin',this.value)">`
+          : `<input type="number" class="cool-in" value="" title="쿨다운은 상위 등급만" disabled style="opacity:.35">`}
+        <button class="adm-btn sec" onclick="admPickImg(${ii},${pi})">이미지</button>
+        <button class="adm-btn sec" onclick="openAdjust(cfg.ips[${ii}].prizes[${pi}].imageKey,'prize')">조정</button>
+        <button class="adm-btn sec ${bundled?'bdl-on':''}" onclick="admToggleBundle(${ii},${pi})" title="여러 하위상품을 묶어 당첨 시 랜덤 1개 지급">${bundled?'번들✓':'번들'}</button>
+        <button class="adm-btn sec ${p.hidden?'hid-on':''}" onclick="admToggleHidden(${ii},${pi})" title="숨김 = 라인업 미표시·추첨 제외 (설정·재고 보존, 즉시 반영)">${p.hidden?'숨김':'노출'}</button>
+        <button class="del" onclick="admDelPrize(${ii},${pi})">×</button>
+      </div>`;
+      if(bundled){
+        let subRows='';
+        p.subs.forEach((s,si)=>{
+          subRows+=`<div class="sub-row">
+            <span class="sub-idx">${si+1}</span>
+            <input value="${escAttr(s.name)}" onchange="admEditSub(${ii},${pi},${si},'name',this.value)" placeholder="하위 경품명">
+            <input type="number" min="0" value="${s.count}" title="초기 수량" onchange="admEditSub(${ii},${pi},${si},'count',this.value)">
+            <input type="number" class="rem-in" min="0" value="${(Array.isArray((stock[ip.id]||[])[pi])?stock[ip.id][pi][si]:0)??0}" title="잔여 수량 — 수정 시 즉시 반영" onchange="admEditSubRemain(${ii},${pi},${si},this.value)">
+            <button class="adm-btn sec" onclick="admPickSubImg(${ii},${pi},${si})">이미지</button>
+            <button class="adm-btn sec" onclick="openAdjust((cfg.ips[${ii}].prizes[${pi}].subs[${si}]||{}).imageKey,'prize')">조정</button>
+            <button class="del" onclick="admDelSub(${ii},${pi},${si})">×</button>
+          </div>`;
+        });
+        prizeRows+=`<div class="bundle-block">
+          ${subRows}
+          <button class="adm-btn sec" onclick="admAddSub(${ii},${pi})">+ 하위상품 추가</button>
+          <div class="muted-note">당첨 시 하위상품 중 재고 비례 무작위 1개 지급 · 대표이미지는 위 행 '이미지'</div>
+        </div>`;
+      }
+    });
+    card.innerHTML=`
+      <h4>IP ${ii+1} <button class="adm-btn dng" style="float:right" onclick="admDelIp(${ii})">IP 삭제</button></h4>
+      <div class="adm-row"><label>IP명</label><input value="${escAttr(ip.name)}" onchange="admEditIp(${ii},'name',this.value)"></div>
+      <div class="adm-row"><label>배너</label><button class="adm-btn sec" onclick="admPickHero(${ii})">이미지 업로드</button><button class="adm-btn sec" onclick="openAdjust(cfg.ips[${ii}].heroImageKey,'ipcard')">조정</button><span class="adm-thumb">${ip.heroImageKey&&imgCache[ip.heroImageKey]?`<img src="${imgCache[ip.heroImageKey]}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`:'🎁'}</span></div>
+      <div style="margin:10px 0 4px;font-size:12px;color:#ffe14d">순서(▲▼) / 등급 / 상위·일반 / 경품명 / 초기수량 / <b style="color:#ffe14d">잔여(골드칸·즉시반영)</b> / 쿨다운분(상위만·빈칸=기본값) / 이미지 / 조정 / 번들 / <b style="color:#ffe14d">노출·숨김(즉시반영)</b></div>
+      ${prizeRows}
+      <button class="adm-btn sec" onclick="admAddPrize(${ii})">+ 등급 추가</button>
+      <div class="adm-row" style="margin-top:12px"><label>행운상</label><input value="${escAttr(ip.lastOne?ip.lastOne.name:'')}" placeholder="행운상 경품명 (예: 스토어 할인 쿠폰, 없으면 비움)" onchange="admEditLastOne(${ii},this.value)"><button class="adm-btn sec" onclick="admPickLastOne(${ii})">이미지</button><button class="adm-btn sec" onclick="openAdjust((cfg.ips[${ii}].lastOne||{}).imageKey,'lucky')">조정</button><button class="adm-btn dng" onclick="admDelLastOne(${ii})">삭제</button><span class="adm-thumb">${ip.lastOne&&ip.lastOne.imageKey&&imgCache[ip.lastOne.imageKey]?`<img src="${imgCache[ip.lastOne.imageKey]}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`:'🍀'}</span></div>
+      <div class="muted-note">행운상: 각 등급의 마지막 1개를 뽑은 참여자에게 현장 지급 · 경품명을 비우거나 삭제하면 행운상 없음</div>`;
+    root.appendChild(card);
+  });
+  const add=document.createElement('button'); add.className='adm-btn pri'; add.style.width='100%'; add.textContent='+ IP 추가 (최대 3개)';
+  add.onclick=admAddIp; if(cfg.ips.length>=3) add.disabled=true; root.appendChild(add);
+  const save=document.createElement('button'); save.className='adm-btn pri'; save.style.cssText='width:100%;margin-top:10px;padding:14px'; save.textContent='💾 저장 (재고는 유지됨)'; save.onclick=admSaveCfg; root.appendChild(save);
+  const note=document.createElement('div'); note.className='muted-note'; note.style.marginTop='8px'; note.textContent='⚠️ 저장은 설정만 기록하며 재고(잔여 카운트)는 절대 건드리지 않습니다. 재고 전체 리셋은 [재고] 탭 하단 버튼(2단계 확인)으로만 가능합니다.'; root.appendChild(note);
+}
+function admEditIp(i,f,v){ cfg.ips[i][f]=v; }
+function admEditPrize(i,pi,f,v){
+  const p=cfg.ips[i].prizes[pi];
+  if(f==='coolMin'){ // 빈칸 = 기본값 사용(필드 제거), 숫자 = 등급별 값(0=끔)
+    if(String(v).trim()==='') delete p.coolMin; else p.coolMin=Math.max(0,parseInt(v)||0);
+    return;
+  }
+  p[f] = f==='count'? (Math.max(0,parseInt(v)||0)) : v;
+  if(f==='tier') renderAdmIps(); // 쿨다운 칸 활성/비활성 갱신
+}
+/* 잔여 수량 즉시 조정 — stock에 바로 쓰고 저장(설정 저장 버튼과 무관). 0~초기값 클램프 */
+function admEditRemain(i,pi,v){
+  const ip=cfg.ips[i], p=ip.prizes[pi]; let n=Math.max(0,parseInt(v)||0);
+  const max=prizeTotal(p); if(n>max){ n=max; toast('잔여는 초기 수량('+max+') 이하만 가능'); }
+  if(!Array.isArray(stock[ip.id])) reconcileStock();
+  stock[ip.id][pi]=n; saveStock(); toast('잔여 '+n+'개로 조정됨'); renderAdmIps();
+}
+function admEditSubRemain(i,pi,si,v){
+  const ip=cfg.ips[i], p=ip.prizes[pi]; let n=Math.max(0,parseInt(v)||0);
+  const max=+((p.subs[si]||{}).count)||0; if(n>max){ n=max; toast('잔여는 초기 수량('+max+') 이하만 가능'); }
+  if(!Array.isArray(stock[ip.id]) || !Array.isArray(stock[ip.id][pi])) reconcileStock();
+  stock[ip.id][pi][si]=n; saveStock(); toast('잔여 '+n+'개로 조정됨'); renderAdmIps();
+}
+function admEditLastOne(i,v){ if(!cfg.ips[i].lastOne) cfg.ips[i].lastOne={name:'',imageKey:null}; cfg.ips[i].lastOne.name=v; }
+/* 등급 추가/삭제 — prizes와 stock을 같은 인덱스로 함께 변경 + 즉시 저장 (길이 불일치로 인한 재고 전체 리셋 방지)
+   새 등급은 숨김 상태로 시작: 이름·수량 작성 전 참여자 화면(S3)·추첨에 노출되지 않게 */
+function admAddPrize(i){
+  const ip=cfg.ips[i], p={grade:'',name:'',imageKey:null,count:1,tier:'normal',hidden:true};
+  ip.prizes.push(p);
+  if(Array.isArray(stock[ip.id])) stock[ip.id].push(prizeFreshStock(p)); else stock[ip.id]=ip.prizes.map(prizeFreshStock);
+  saveCfg(); saveStock(); toast('새 등급 추가됨 (숨김 상태) — 작성 후 노출 버튼으로 공개'); renderAdmIps();
+}
+function admDelPrize(i,pi){
+  const ip=cfg.ips[i], p=ip.prizes[pi];
+  if(!confirm(`'${p.grade||p.name||'(이름없음)'}' 등급을 삭제할까요?\n이 등급의 재고 정보도 함께 삭제됩니다. (다른 등급 재고는 유지)`)) return;
+  ip.prizes.splice(pi,1);
+  if(Array.isArray(stock[ip.id])) stock[ip.id].splice(pi,1);
+  saveCfg(); saveStock(); toast('등급 삭제됨'); renderAdmIps();
+}
+/* 상품 노출/숨김 — 긴급 운영용, 즉시 저장·즉시 반영. 숨김 = S3 미표시·추첨 제외·잔여 집계 제외 (설정·재고·이미지 보존) */
+function admToggleHidden(i,pi){
+  const p=cfg.ips[i].prizes[pi];
+  if(p.hidden) delete p.hidden; else p.hidden=true;
+  saveCfg();
+  toast(p.hidden ? '숨김 처리됨 — 라인업·추첨에서 제외' : '노출됨 — 라인업·추첨에 포함');
+  renderAdmIps();
+}
+/* 상품 순서 이동(▲▼) — prizes와 stock을 같은 인덱스로 함께 swap, 즉시 저장 → S3에 그대로 반영 */
+function admMovePrize(i,pi,dir){ const ip=cfg.ips[i], pr=ip.prizes, j=pi+dir; if(j<0||j>=pr.length)return; [pr[pi],pr[j]]=[pr[j],pr[pi]]; const st=stock[ip.id]; if(Array.isArray(st)){ [st[pi],st[j]]=[st[j],st[pi]]; } saveCfg(); saveStock(); renderAdmIps(); toast('순서 변경됨'); }
+/* ── 번들 상품 편집 ── */
+/* 번들 전환/하위 편집 — 해당 상품의 stock 칸만 함께 갱신 + 즉시 저장 (다른 등급 재고에 영향 없음) */
+function admToggleBundle(i,pi){
+  const ip=cfg.ips[i], p=ip.prizes[pi];
+  const remain=prizeRemain(ip,pi); // 전환 전 잔여 보존 시도
+  if(isBundle(p)){ // 번들 해제 → 단순상품으로 (하위는 버림, 합계를 count로, 잔여는 하위 잔여 합계 유지)
+    if(!confirm('번들을 해제하면 하위상품 목록이 삭제됩니다. 계속할까요?')) return;
+    p.count=prizeTotal(p); delete p.bundle; delete p.subs;
+    if(Array.isArray(stock[ip.id])) stock[ip.id][pi]=remain;
+  } else { // 번들 전환 → 첫 하위상품 1개로 시작(기존 이미지는 대표이미지로 유지, 잔여는 하위 1칸으로 이어받음)
+    p.bundle=true; p.subs=[{name:'',imageKey:null,count:Math.max(1,+p.count||1)}];
+    if(Array.isArray(stock[ip.id])) stock[ip.id][pi]=[remain];
+  }
+  saveCfg(); saveStock(); renderAdmIps();
+}
+function admAddSub(i,pi){
+  const ip=cfg.ips[i], p=ip.prizes[pi]; if(!Array.isArray(p.subs))p.subs=[];
+  p.subs.push({name:'',imageKey:null,count:1});
+  const cell=(stock[ip.id]||[])[pi]; if(Array.isArray(cell)) cell.push(1);
+  saveCfg(); saveStock(); renderAdmIps();
+}
+function admDelSub(i,pi,si){
+  const ip=cfg.ips[i], p=cfg.ips[i].prizes[pi];
+  p.subs.splice(si,1);
+  const cell=(stock[ip.id]||[])[pi]; if(Array.isArray(cell)) cell.splice(si,1);
+  if(!p.subs.length){ delete p.bundle; delete p.subs; p.count=p.count||1; if(Array.isArray(stock[ip.id])) stock[ip.id][pi]=+p.count||1; }
+  saveCfg(); saveStock(); renderAdmIps();
+}
+function admEditSub(i,pi,si,f,v){ const s=cfg.ips[i].prizes[pi].subs[si]; s[f]= f==='count'? (Math.max(0,parseInt(v)||0)) : v; if(f==='count') renderAdmIps(); }
+async function admPickSubImg(i,pi,si){ const key='img_'+cfg.ips[i].id+'_p'+pi+'s'+si+'_'+Date.now(); const k=await uploadImg(key); if(k){ cfg.ips[i].prizes[pi].subs[si].imageKey=k; toast('하위 이미지 적용됨 (저장 잊지 마세요)'); renderAdmIps(); } }
+function admAddIp(){ if(cfg.ips.length>=3)return; cfg.ips.push({id:'ip'+Date.now(),name:'새 IP',heroImageKey:null,lastOne:{name:'',imageKey:null},prizes:[{grade:'A상',name:'',imageKey:null,count:1,tier:'high'}]}); renderAdmIps(); }
+function admDelIp(i){ if(cfg.ips.length<=1){toast('최소 1개 IP가 필요합니다');return;} if(confirm('이 IP를 삭제할까요?')){ cfg.ips.splice(i,1); renderAdmIps(); } }
+/* 이미지 업로드 */
+function pickFile(accept){ return new Promise(res=>{ const inp=document.createElement('input'); inp.type='file'; /* iOS 파일앱은 accept="audio/*"로 mp3/wav를 회색 비활성화함 → 오디오는 필터 제거(전체 선택 가능) */ if(accept && !/audio/.test(accept)) inp.accept=accept; /* iOS 안정: input을 DOM에 붙여 클릭(분리된 input은 파일피커가 멈추는 경우 있음) */ inp.style.cssText='position:fixed;left:-9999px;top:0;opacity:0'; let done=false; const finish=(f)=>{ if(done)return; done=true; res(f); setTimeout(()=>{try{inp.remove();}catch(e){}},0); }; inp.onchange=()=>finish(inp.files[0]||null); document.body.appendChild(inp); inp.click(); }); }
+function fileToDataURL(f){ return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>res(null); r.readAsDataURL(f); }); }
+async function uploadImg(key){ const f=await pickFile('image/*'); if(!f)return null; if(f.size>1.5*1024*1024){ toast('이미지는 1.5MB 이하 권장'); } const d=await fileToDataURL(f); if(!d)return null; await idbPut(key,d); imgCache[key]=d; return key; }
+async function admPickImg(i,pi){ const key='img_'+cfg.ips[i].id+'_p'+pi+'_'+Date.now(); const k=await uploadImg(key); if(k){ cfg.ips[i].prizes[pi].imageKey=k; toast('이미지 적용됨 (저장 잊지 마세요)'); renderAdmIps(); } }
+async function admPickHero(i){ const key='img_'+cfg.ips[i].id+'_hero_'+Date.now(); const k=await uploadImg(key); if(k){ cfg.ips[i].heroImageKey=k; renderAdmIps(); } }
+async function admPickLastOne(i){ if(!cfg.ips[i].lastOne)cfg.ips[i].lastOne={name:'',imageKey:null}; const key='img_'+cfg.ips[i].id+'_lo_'+Date.now(); const k=await uploadImg(key); if(k){ cfg.ips[i].lastOne.imageKey=k; renderAdmIps(); } }
+async function admDelLastOne(i){ if(!confirm('이 IP의 행운상을 삭제할까요?')) return; const lo=cfg.ips[i].lastOne; if(lo&&lo.imageKey){ try{await idbDel(lo.imageKey);}catch(e){} } cfg.ips[i].lastOne={name:'',imageKey:null}; saveCfg(); toast('행운상 삭제됨'); renderAdmIps(); }
+/* 설정 저장 — 재고는 절대 건드리지 않는다 (2026-07-08 현장 사고: 저장 confirm의 리셋 유도로 실재고 카운트 소실).
+   재고 전체 리셋은 재고 탭의 2단계 확인 버튼(admResetStock)으로만 가능. */
+function admSaveCfg(){
+  // 빈 등급 정리 (번들은 하위가 있으면 유지) — stock을 같은 인덱스로 함께 정리해 재고 보존
+  cfg.ips.forEach(ip=>{
+    const st=Array.isArray(stock[ip.id])?stock[ip.id]:null, keep=[], stKeep=[];
+    ip.prizes.forEach((p,i)=>{ if(p.grade||p.name||isBundle(p)){ keep.push(p); if(st) stKeep.push(st[i]!==undefined?st[i]:prizeFreshStock(p)); } });
+    ip.prizes=keep; if(st) stock[ip.id]=stKeep;
+  });
+  saveCfg(); reconcileStock(); saveStock();
+  toast('설정 저장됨 — 재고(잔여)는 그대로 유지');
+  renderAdmIps();
+}
+
+/* 재고 현황 */
+function renderAdmStock(){
+  const root=document.getElementById('pane-stock'); let html=`<div class="adm-card"><h4>전체 잔여: ${totalRemainAll()}장</h4>`;
+  cfg.ips.forEach(ip=>{
+    html+=`<div style="margin:10px 0 4px;font-weight:700">${esc(ip.name)} — 잔여 ${remainOf(ip)}/${totalOf(ip)}</div><table class="adm-tbl"><tr><th>등급</th><th>경품</th><th>잔여/초기</th></tr>`;
+    ip.prizes.forEach((p,i)=>{
+      html+=`<tr><td>${esc(p.grade)}</td><td>${esc(p.name)}${isBundle(p)?' <span style="color:#ffe14d">(번들)</span>':''}${p.hidden?' <span style="color:#8A8A93">(숨김)</span>':''}</td><td>${prizeRemain(ip,i)} / ${prizeTotal(p)}${isCooling(ip,p)?` <span style="color:#ffe14d">🔒${coolLeftMin(ip,p)}분</span>`:''}</td></tr>`;
+      if(isBundle(p)){ const cell=(stock[ip.id]||[])[i]||[]; p.subs.forEach((s,si)=>{ html+=`<tr><td></td><td style="padding-left:18px;color:#cfc3ff">└ ${esc(s.name||'(이름없음)')}</td><td>${(cell[si]??0)} / ${(+s.count||0)}</td></tr>`; }); }
+    });
+    html+=`</table>`;
+  });
+  html+=`</div><button class="adm-btn dng" style="width:100%;padding:14px" onclick="admResetStock()">⚠️ 재고 전체 리셋</button>`;
+  root.innerHTML=html;
+}
+function admResetStock(){ if(confirm('재고를 초기 수량으로 되돌릴까요?')){ if(confirm('정말 초기화하시겠습니까? (되돌릴 수 없음)')){ stock=freshStock(); saveStock(); toast('재고 초기화 완료'); renderAdmStock(); } } }
+
+/* 당첨 로그 + CSV */
+function renderAdmLog(){
+  const root=document.getElementById('pane-log');
+  const today=dateKey(new Date()); const todayCnt=logArr.filter(l=>dateKey(new Date(l.timestamp))===today).length;
+  let html=`<div class="adm-card"><h4>당첨 로그 (총 ${logArr.length}건 · 오늘 ${todayCnt}건)</h4>
+    <button class="adm-btn pri" onclick="exportCsv()">📄 CSV 내보내기</button>
+    <button class="adm-btn dng" style="float:right" onclick="admClearLog()">로그 삭제</button>
+    <table class="adm-tbl" style="margin-top:10px"><tr><th>#</th><th>시각</th><th>IP</th><th>등급</th><th>경품</th></tr>`;
+  logArr.slice(-50).reverse().forEach(l=>{ const t=new Date(l.timestamp); html+=`<tr><td>${l.serial||''}</td><td>${String(t.getMonth()+1).padStart(2,'0')}/${String(t.getDate()).padStart(2,'0')} ${String(t.getHours()).padStart(2,'0')}:${String(t.getMinutes()).padStart(2,'0')}</td><td>${esc(l.ipName)}</td><td>${esc(l.grade)}${l.isLastOne?' +LO':''}</td><td>${esc(l.prizeName)}</td></tr>`; });
+  html+=`</table><div class="muted-note">최근 50건 표시 · CSV는 전체</div></div>`;
+  root.innerHTML=html;
+}
+function exportCsv(){
+  const rows=[['serial','timestamp','ipId','ipName','grade','prizeName','isLastOne']];
+  logArr.forEach(l=>rows.push([l.serial||'',l.timestamp,l.ipId,l.ipName,l.grade,l.prizeName,l.isLastOne?'TRUE':'FALSE']));
+  const csv='﻿'+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}); const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download=`kuji-log-${dateKey(new Date()).replace(/-/g,'')}.csv`; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast('CSV 다운로드');
+}
+function admClearLog(){ if(confirm('당첨 로그를 모두 삭제할까요? (CSV 백업 권장)')){ logArr=[]; saveLog(); toast('로그 삭제됨'); renderAdmLog(); } }
+
+/* ════════════════ 설정 백업/복원 (.kuji) ════════════════
+   v2(2026-07-09): 아이패드에서 영상 포함 전체 백업이 메모리 초과로 크래시(흰 화면)하던 문제 대응 —
+   범위 선택(전체/영상 제외) + 순차 로딩(피크 완화). 영상 제외 백업은 가져올 때 대상 기기의 영상을 유지. */
+const KUJI_MAGIC='KUJI', KUJI_VER=2;
+/* 이 기기 설정 기준 영상 키 집합 (대기영상 + 영상 NPC + 레거시) */
+function videoKeySet(c){ const s=new Set(['idle_video']); ((c&&c.ips)||[]).forEach(ip=>(ip.prizes||[]).forEach(p=>{if(p.videoKey)s.add(p.videoKey);if(p.popupVideoKey)s.add(p.popupVideoKey);})); ((c&&c.idleVideos)||[]).forEach(x=>s.add('idlevid_'+x.id)); ((c&&c.npcs)||[]).forEach(n=>{ if(n.type==='video') s.add('npc_'+n.id); }); return s; }
+function summarizeMedia(arr){ const c={img:0,audio:0,other:0}; (arr||[]).forEach(m=>{ if(m.kind==='image')c.img++; else if(/^(bgm_|sfx_)/.test(m.key))c.audio++; else c.other++; }); return c; }
+function dlBlob(blob,name){ const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ try{a.remove();}catch(e){} URL.revokeObjectURL(url); },1500); }
+function backupName(){ const d=new Date(), p=n=>String(n).padStart(2,'0'); return `kuji-backup-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}.kuji`; }
+/* 분할 백업(v30): 총 미디어가 크면(이번 사례 423MB) 한 덩어리 Blob 조립이 iOS 메모리 한도에 걸려
+   빈 파일(0바이트)이 됨 → 60MB 이하 조각 파일(.kuji 1ofN…)로 나눠 내보내고, 가져올 때 순서대로 합친다.
+   v31: 분할은 iOS에서만 — PC(데스크탑)는 메모리 여유가 커서 단일 파일로 내보냄 (PC 마스터 → 드라이브/USB → 아이패드 가져오기 운영) */
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+let KUJI_CHUNK_CAP = IS_IOS ? 60*1048576 : Infinity;
+let _exportJob=null;
+async function exportBackup(scope){
+  if(!scope){ showExportScopeSheet(); return; } // 1단계: 범위 선택 (전체 / 영상 제외)
+  closeExportSheet();
+  try{
+    toast('백업 계획 수립 중…');
+    const excl = scope==='novideo' ? videoKeySet(cfg) : null;
+    const allKeys=await idbKeys();
+    const keys=allKeys.filter(k=>!excl || !excl.has(String(k)));
+    // 1차 스캔: 항목별 크기만 측정(값은 즉시 해제) → 60MB 이하 조각으로 분할 계획
+    const plan=[]; let cur=[], curBytes=0;
+    for(const key of keys){
+      const value=await idbGet(key);
+      let n=0;
+      if(typeof value==='string') n=value.length;
+      else if(value && value.buf) n=value.buf.byteLength||0;
+      else if(value instanceof Blob) n=value.size;
+      else if(value instanceof ArrayBuffer) n=value.byteLength;
+      else continue;
+      if(curBytes>0 && curBytes+n>KUJI_CHUNK_CAP){ plan.push(cur); cur=[]; curBytes=0; }
+      cur.push(key); curBytes+=n;
+    }
+    if(cur.length || !plan.length) plan.push(cur);
+    _exportJob={ scope, plan, idx:0, total:plan.length, stamp:backupName().replace('.kuji',''), diag:{totalKeys:allKeys.length, picked:keys.length} };
+    await buildExportPart();
+  }catch(e){ toast('백업 실패: '+((e&&e.message)||e)); }
+}
+async function buildExportPart(){
+  const job=_exportJob; if(!job) return;
+  try{
+    toast(`백업 파일 ${job.idx+1}/${job.total} 생성 중…`);
+    const enc=new TextEncoder();
+    const media=[], parts=[]; let off=0;
+    for(const key of job.plan[job.idx]){
+      const value=await idbGet(key);
+      let bytes=null, kind, type='';
+      if(typeof value==='string'){ kind='image'; bytes=enc.encode(value); }
+      else if(value && value.buf){ kind='buf'; type=value.type||''; bytes=new Uint8Array(value.buf); }
+      else if(value instanceof Blob){ kind='buf'; type=value.type||''; bytes=new Uint8Array(await value.arrayBuffer()); }
+      else if(value instanceof ArrayBuffer){ kind='buf'; bytes=new Uint8Array(value); }
+      else continue;
+      media.push({ key:String(key), kind, type, off, len:bytes.length });
+      parts.push(bytes); off+=bytes.length;
+    }
+    // 설정·재고·로그는 1번 파일에만 담는다
+    const manifest={ v:2, app:'kuji', scope:job.scope, part:job.idx+1, parts:job.total, exportedAt:new Date().toISOString(),
+      ls: job.idx===0 ? { cfg:localStorage.getItem(K_CFG), stock:JSON.stringify(stock), log:JSON.stringify(logArr) } : undefined, media };
+    const mBytes=enc.encode(JSON.stringify(manifest));
+    const header=new Uint8Array(8); header.set(enc.encode(KUJI_MAGIC),0);
+    new DataView(header.buffer).setUint32(4, mBytes.length, true);
+    const expected=8+mBytes.length+off;
+    let blob=new Blob([header, mBytes, ...parts], {type:'application/octet-stream'});
+    if(blob.size!==expected){ // 그래도 유실되면 소분 누적 재조립
+      let acc=new Blob([header, mBytes], {type:'application/octet-stream'});
+      for(let i=0;i<parts.length;i+=8) acc=new Blob([acc, ...parts.slice(i,i+8)], {type:'application/octet-stream'});
+      blob=acc;
+    }
+    const sizeOk=(blob.size===expected);
+    const name = job.total>1 ? `${job.stamp}-${job.idx+1}of${job.total}.kuji` : `${job.stamp}.kuji`;
+    const mb=(blob.size/1048576).toFixed(1);
+    const c=summarizeMedia(media);
+    /* iOS 공유시트는 "사용자 터치 직후"에만 열 수 있다 → 준비 완료 시트의 버튼 터치(새 제스처)로 share 호출 */
+    _exportPack={blob, name, mb, c, scope:job.scope, part:job.idx+1, parts:job.total,
+      diag:{total:job.diag.totalKeys, picked:job.diag.picked, packed:media.length, expected, actual:blob.size, sizeOk}};
+    showExportSheet();
+  }catch(e){ toast('백업 실패: '+((e&&e.message)||e)); }
+}
+function exportNextPart(){ if(!_exportJob) return; if(_exportJob.idx+1>=_exportJob.total){ cancelExport(); return; } _exportJob.idx++; const el=document.getElementById('export-sheet'); if(el) el.remove(); _exportPack=null; buildExportPart(); }
+function cancelExport(){ closeExportSheet(); _exportJob=null; }
+function showExportScopeSheet(){
+  closeExportSheet();
+  const el=document.createElement('div'); el.id='export-sheet';
+  el.style.cssText='position:fixed;inset:0;background:rgba(8,2,28,.78);z-index:99;display:flex;align-items:center;justify-content:center;padding:24px';
+  el.innerHTML=`<div style="background:#1F1147;border:1px solid #3A2A6E;border-radius:14px;max-width:440px;width:100%;padding:20px;color:#fff">
+    <h4 style="margin:0 0 10px">내보내기 범위 선택</h4>
+    <button class="adm-btn pri" style="width:100%;padding:14px;margin-bottom:8px" onclick="exportBackup('novideo')">🖼 영상 제외 (권장 · 가볍고 안정적)</button>
+    <div style="font-size:12px;color:#B3ACD6;line-height:1.6;margin:0 0 12px">설정·재고·로그·이미지·BGM·효과음 포함. 가져오는 기기의 <b>영상은 지우지 않고 유지</b>합니다.</div>
+    <button class="adm-btn sec" style="width:100%;padding:14px;margin-bottom:8px" onclick="exportBackup('full')">🎬 전체 (영상 포함)</button>
+    <div style="font-size:12px;color:#B3ACD6;line-height:1.6;margin:0 0 12px">⚠️ 영상이 많으면 용량이 매우 커져 <b>기기 메모리 부족으로 실패(흰 화면)</b>할 수 있습니다.</div>
+    <button class="adm-btn dng" style="width:100%;padding:10px" onclick="closeExportSheet()">닫기</button>
+  </div>`;
+  document.body.appendChild(el);
+}
+let _exportPack=null;
+function showExportSheet(){
+  const old=document.getElementById('export-sheet'); if(old) old.remove();
+  const {mb,c,part,parts}=_exportPack;
+  let canShare=false;
+  try{ canShare=!!(navigator.canShare && navigator.canShare({files:[new File([_exportPack.blob], _exportPack.name, {type:'application/octet-stream'})]})); }catch(e){}
+  const multi=parts>1, last=part>=parts;
+  const el=document.createElement('div'); el.id='export-sheet';
+  el.style.cssText='position:fixed;inset:0;background:rgba(8,2,28,.78);z-index:99;display:flex;align-items:center;justify-content:center;padding:24px';
+  el.innerHTML=`<div style="background:#1F1147;border:1px solid #3A2A6E;border-radius:14px;max-width:440px;width:100%;padding:20px;color:#fff">
+    <h4 style="margin:0 0 10px">📦 백업 파일 ${multi?`<b style="color:#FFD84D">${part} / ${parts}</b> `:''}준비 완료 <span style="font-size:12px;color:#B3ACD6">(${_exportPack.scope==='novideo'?'영상 제외':'전체'})</span></h4>
+    ${multi?`<div style="font-size:12px;color:#FFD84D;line-height:1.6;margin-bottom:8px">용량이 커서 ${parts}개 파일로 나눴습니다. <b>각 파일을 전송 → [다음 파일]</b>을 반복해 전부 전달하세요. 가져올 땐 1번 파일부터 순서대로.</div>`:''}
+    <div style="font-size:13px;color:#B3ACD6;line-height:1.7;margin-bottom:14px">이 파일: 📷 ${c.img} · 🔊 ${c.audio} · 🎬 ${c.other} · 용량 <b style="color:#FFD84D">${mb}MB</b>
+    <br><span style="font-size:11px;opacity:.7">진단: 키 ${_exportPack.diag.total} → 대상 ${_exportPack.diag.picked} → 이 파일 ${_exportPack.diag.packed}개 · 예상 ${(_exportPack.diag.expected/1048576).toFixed(2)}MB → 파일 ${(_exportPack.diag.actual/1048576).toFixed(2)}MB${_exportPack.diag.sizeOk?' ✓':' ⚠️ 조립 이상 — 이 화면을 캡처해 전달해주세요'}</span></div>
+    ${canShare?`<button class="adm-btn pri" style="width:100%;padding:14px;margin-bottom:8px" onclick="exportShare()">📤 공유시트 열기 (에어드랍·파일에 저장·카톡)</button>`:''}
+    <button class="adm-btn sec" style="width:100%;padding:14px;margin-bottom:8px" onclick="exportDownload()">⬇️ 다운로드로 저장${canShare?' (예비)':''}</button>
+    ${multi&&!last?`<button class="adm-btn sec" style="width:100%;padding:14px;margin-bottom:8px;border:1px solid #FFD84D;color:#FFD84D" onclick="exportNextPart()">▶ 다음 파일 (${part+1}/${parts}) 준비</button>`:''}
+    <button class="adm-btn dng" style="width:100%;padding:10px" onclick="cancelExport()">닫기</button>
+  </div>`;
+  document.body.appendChild(el);
+}
+function closeExportSheet(){ const el=document.getElementById('export-sheet'); if(el) el.remove(); _exportPack=null; }
+async function exportShare(){ // 버튼 터치 = 새 사용자 제스처 → share 확실히 동작
+  if(!_exportPack) return;
+  const {blob,name,mb,part,parts}=_exportPack;
+  try{
+    await navigator.share({ files:[new File([blob], name, {type:'application/octet-stream'})], title:'쿠지 설정 백업'+(parts>1?` ${part}/${parts}`:'') });
+    toast(`${parts>1?`파일 ${part}/${parts} `:''}공유 완료 (${mb}MB)`);
+    if(parts>1 && part<parts) exportNextPart(); else cancelExport();
+  }catch(e){
+    if(e && e.name==='AbortError'){ toast('공유 취소됨 — 다시 시도할 수 있습니다'); return; } // 시트 유지
+    toast('공유 실패 — 아래 다운로드로 저장하세요');
+  }
+}
+function exportDownload(){
+  if(!_exportPack) return;
+  const {blob,name,mb,part,parts}=_exportPack;
+  dlBlob(blob,name); toast(`${parts>1?`파일 ${part}/${parts} `:''}다운로드 (${mb}MB)`);
+  if(parts>1 && part<parts) exportNextPart(); else cancelExport();
+}
+async function importBackup(){
+  const f=await pickFile(); if(!f) return;
+  if(!confirm('백업을 가져오면 현재 기기의 설정·재고·로그·미디어가 백업 내용으로 덮어써집니다.\n(영상 제외 백업이면 이 기기의 영상은 유지됩니다)\n계속할까요?')) return;
+  if(!confirm('정말 복원할까요? (되돌릴 수 없음)')) return;
+  try{
+    toast('복원 중… (파일이 크면 시간이 걸립니다)');
+    const buf=await fileToArrayBuffer(f); if(!buf) throw new Error('파일을 읽을 수 없습니다');
+    const c=await applyBackup(buf);
+    alert(`복원 완료${c.parts>1?` (파일 ${c.part}/${c.parts})`:''}${c.scope==='novideo'?' · 영상 제외 — 이 기기 영상 유지':''}\n📷 이미지 ${c.img} · 🔊 오디오 ${c.audio} · 🎬 영상/기타 ${c.other}${c.parts>1&&c.part<c.parts?`\n\n▶ 새로고침 후 ${c.part+1}번 파일도 이어서 가져오세요!`:''}\n확인을 누르면 새로고침합니다.`);
+    location.reload();
+  }catch(e){ toast('복원 실패: '+((e&&e.message)||e)); }
+}
+/* 백업 적용 코어 — scope==='novideo'면 이 기기의 영상(대기영상·영상NPC)과 cfg의 영상 목록을 보존 */
+async function applyBackup(buf){
+  const u8=new Uint8Array(buf), dec=new TextDecoder();
+  if(dec.decode(u8.subarray(0,4))!==KUJI_MAGIC) throw new Error('쿠지 백업 파일이 아닙니다');
+  const mLen=new DataView(buf,4,4).getUint32(0,true);
+  const manifest=JSON.parse(dec.decode(u8.subarray(8,8+mLen)));
+  if(manifest.app!=='kuji') throw new Error('형식이 올바르지 않습니다');
+  if((manifest.v|0)>KUJI_VER) throw new Error('더 최신 버전 백업입니다. 앱을 업데이트하세요');
+  const scope=manifest.scope||'full';
+  const base=8+mLen, ls=manifest.ls||{};
+  let oldCfg=null; try{ oldCfg=JSON.parse(localStorage.getItem(K_CFG)); }catch(e){}
+  if(ls.cfg!=null){
+    if(scope==='novideo' && oldCfg){
+      // 영상 목록은 이 기기 것을 유지 (백업 cfg의 영상 참조는 이 기기에 파일이 없음)
+      const nc=JSON.parse(ls.cfg);
+      nc.idleVideos = oldCfg.idleVideos||[];
+      (nc.ips||[]).forEach(ip=>(ip.prizes||[]).forEach((p,i)=>{ const oldIp=(oldCfg.ips||[]).find(x=>x.id===ip.id); const old=oldIp&&oldIp.prizes[i]; for(const key of ['videoKey','popupVideoKey']){delete p[key];if(old&&old[key])p[key]=old[key];} }));
+      nc.npcs = [ ...((nc.npcs||[]).filter(n=>n.type!=='video')), ...((oldCfg.npcs||[]).filter(n=>n.type==='video')) ];
+      localStorage.setItem(K_CFG, JSON.stringify(nc));
+    } else localStorage.setItem(K_CFG, ls.cfg);
+  }
+  if(ls.stock!=null) localStorage.setItem(K_STOCK, ls.stock);
+  if(ls.log!=null) localStorage.setItem(K_LOG, ls.log);
+  if(ls.stock!=null || ls.log!=null) localStorage.setItem(K_STATE, JSON.stringify({stock:ls.stock!=null?JSON.parse(ls.stock):stock,log:ls.log!=null?JSON.parse(ls.log):logArr}));
+  // 분할 백업: 1번 파일에서만 기존 데이터 정리, 2번째부터는 덧쓰기만 (순서대로 가져오기 전제)
+  if((manifest.part||1)===1){
+    if(scope==='novideo'){
+      const keep=videoKeySet(oldCfg||{});
+      const keys=await idbKeys();
+      for(const k of keys){ if(!keep.has(String(k))) await idbDel(k); }
+    } else { await idbClear(); }
+  }
+  for(const m of (manifest.media||[])){
+    const slice=u8.subarray(base+m.off, base+m.off+m.len);
+    if(m.kind==='image') await idbPut(m.key, dec.decode(slice));
+    else await idbPut(m.key, { buf: slice.slice().buffer, type:m.type||'' });
+  }
+  const c=summarizeMedia(manifest.media||[]); c.scope=scope; c.part=manifest.part||1; c.parts=manifest.parts||1;
+  return c;
+}
+
+/* 설정 */
+function renderAdmSettings(){
+  const root=document.getElementById('pane-settings');
+  const npcRows=(cfg.npcs||[]).map((n,i)=>`<div class="adm-row"><label>NPC ${i+1}</label><span style="flex:1">${n.type==='video'?'🎬 영상':'🖼 이미지'}</span><button class="adm-btn dng" onclick="delNpc('${n.id}')">삭제</button></div>`).join('') || '<div class="muted-note">등록된 NPC 없음 (없으면 기본 🎴 표시)</div>';
+  const idleVidRows=(cfg.idleVideos||[]).map((x,i)=>`<div class="adm-row"><label>영상 ${i+1}</label><span style="flex:1">🎬 영상</span><button class="adm-btn dng" onclick="delIdleVideo('${x.id}')">삭제</button></div>`).join('') || '<div class="muted-note">등록된 대기영상 없음</div>';
+  root.innerHTML=`<div class="adm-card"><h4>기본 설정</h4>
+    <div class="adm-row"><label>이벤트명</label><input id="set-name" value="${escAttr(cfg.eventName)}"></div>
+    <div class="adm-row"><label>PIN</label><input id="set-pin" value="${escAttr(cfg.adminPin)}"></div>
+    <div class="adm-row"><label>유휴(초)</label><input id="set-idle" type="number" min="3" value="${cfg.idleTimeoutSec}" title="IP선택·라인업·결과 화면 무입력 복귀(최소 3초)"></div>
+    <div class="adm-row"><label>라인업(S3)</label><button class="adm-btn ${lineupOn()?'sec':'dng'}" onclick="toggleLineup()">${lineupOn()?'👁 표시 중':'🙈 숨김 중 (뽑기 직행)'}</button></div>
+    <div class="adm-row"><label>뽑기복귀(초)</label><input id="set-drawidle" type="number" min="0" value="${cfg.drawIdleSec==null?5:cfg.drawIdleSec}"></div>
+    <div class="muted-note">라인업 숨김 = 경품 리스트 화면(S3) 없이 S1(IP 여러 개면 IP선택) → <b>바로 뽑기 화면</b> · 뽑기복귀 = 뽑기 화면에서 무입력 N초 후 대기화면 복귀(<b>뽑기 버튼 누르기 전에만</b>, 0=끔) · 토글은 즉시 반영</div>
+    <div class="adm-row"><label>쿨다운(분)</label><input id="set-cool" type="number" min="0" value="${cfg.cooldownMin==null?15:cfg.cooldownMin}"></div>
+    <div class="muted-note">쿨다운 <b>기본값</b>: 상위(A·B·C·스페셜) 등급 당첨 후 <b>같은 등급</b>이 N분간 안 뽑히게 함 · <b>0 = 사용 안 함</b> · 상품 탭에서 <b>등급별로 따로</b> 지정 가능(빈칸=이 기본값) · 남은 재고가 전부 쿨다운 중이면 무시하고 지급(100% 당첨 유지)</div>
+    <div class="adm-row"><label>음소거</label><button class="adm-btn ${cfg.muted?'dng':'sec'}" onclick="toggleMute()">${cfg.muted?'🔇 음소거 ON':'🔊 소리 ON'}</button></div>
+    <button class="adm-btn pri" style="width:100%;margin-top:8px" onclick="saveSettings()">설정 저장</button>
+  </div>
+  <div class="adm-card"><h4>S2 상단 히어로 배너</h4>
+    <div class="adm-row"><label>배너</label><button class="adm-btn sec" onclick="admPickHeroBanner()">이미지 업로드</button><button class="adm-btn sec" onclick="openAdjust(cfg.heroBannerKey,'hero')">조정</button><button class="adm-btn dng" onclick="delHeroBanner()">삭제</button><span class="adm-thumb">${cfg.heroBannerKey&&imgCache[cfg.heroBannerKey]?`<img src="${imgCache[cfg.heroBannerKey]}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`:'🎁'}</span></div>
+    <div class="muted-note">IP 선택(S2) 화면 상단 배너 전용. 미설정 시 1번 IP 배너를 사용 · 가로형 권장</div>
+  </div>
+  <div class="adm-card"><h4>대기 영상 (여러 개 = 진입마다 랜덤)</h4>
+    ${idleVidRows}
+    <div class="adm-row" style="margin-top:8px"><button class="adm-btn sec" onclick="addIdleVideo()">+ 영상 추가</button></div>
+    <div class="muted-note">대기화면에 들어갈 때마다 랜덤으로 하나 재생(직전과 다른 영상) · 세로 MP4 무음 · 최대 150MB</div>
+  </div>
+  <div class="adm-card"><h4>뽑기 NPC (여러 개 = 랜덤 표시)</h4>
+    ${npcRows}
+    <div class="adm-row" style="margin-top:8px"><button class="adm-btn sec" onclick="addNpc('image/*','image')">+ 이미지 추가</button><button class="adm-btn sec" onclick="addNpc('video/*','video')">+ 영상 추가</button></div>
+    <div class="muted-note">뽑기 화면마다 랜덤으로 하나 표시 · 영상은 무음 루핑 · 이미지 8MB / 영상 60MB</div>
+  </div>
+  <div class="adm-card"><h4>배경음악 (BGM · 루핑)</h4>
+    <div class="adm-row"><label>대기</label><button class="adm-btn sec" onclick="uploadMedia('bgm_idle','audio/*')">업로드</button><button class="adm-btn dng" onclick="delMedia('bgm_idle')">삭제</button></div>
+    <div class="adm-row"><label>선택</label><button class="adm-btn sec" onclick="uploadMedia('bgm_select','audio/*')">업로드</button><button class="adm-btn dng" onclick="delMedia('bgm_select')">삭제</button></div>
+    <div class="adm-row"><label>뽑기</label><button class="adm-btn sec" onclick="uploadMedia('bgm_play','audio/*')">업로드</button><button class="adm-btn dng" onclick="delMedia('bgm_play')">삭제</button></div>
+    <div class="muted-note">대기 / IP·라인업(선택) / 뽑기·연출·결과 화면별로 자동 전환·루핑 · mp3/m4a/wav, 최대 30MB</div>
+  </div>
+  <div class="adm-card"><h4>효과음 (미설정 시 기본음)</h4>
+    <div class="adm-row"><label>뽑기음</label><button class="adm-btn sec" onclick="uploadMedia('sfx_pick','audio/*')">업로드</button><button class="adm-btn dng" onclick="delMedia('sfx_pick')">삭제</button></div>
+    <div class="adm-row"><label>일반당첨</label><button class="adm-btn sec" onclick="uploadMedia('sfx_win','audio/*')">업로드</button><button class="adm-btn dng" onclick="delMedia('sfx_win')">삭제</button></div>
+    <div class="adm-row"><label>스페셜</label><button class="adm-btn sec" onclick="uploadMedia('sfx_special','audio/*')">업로드</button><button class="adm-btn dng" onclick="delMedia('sfx_special')">삭제</button></div>
+    <div class="muted-note">스페셜 = A·B·C·행운상 당첨 시 금빛 번개 사운드. 업로드 안 하면 기본 합성음 사용</div>
+  </div>
+  <div class="adm-card"><h4>설정 백업 / 복원</h4>
+    <div class="adm-row" style="gap:10px">
+      <button class="adm-btn pri" style="flex:1" onclick="exportBackup()">📤 설정 내보내기</button>
+      <button class="adm-btn sec" style="flex:1" onclick="importBackup()">📥 설정 가져오기</button>
+    </div>
+    <div class="muted-note">현재 기기의 모든 설정·이미지·BGM·효과음·영상을 <b>.kuji 파일 1개</b>로 저장/복원. 새 기기 세팅·재설치·기기 교체 대비.<br>⚠️ <b>가져오기는 현재 데이터를 전부 덮어씁니다.</b> 영상이 많으면 파일이 크고 시간이 걸립니다. (아이패드는 공유시트로 파일앱·에어드랍 저장)</div>
+  </div>
+  <div class="muted-note" style="text-align:center;margin:14px 0 4px">앱 버전 <b>${APP_VER}</b></div>`;
+}
+function saveSettings(){ cfg.eventName=document.getElementById('set-name').value||'컴투스 팝업 쿠지'; cfg.adminPin=document.getElementById('set-pin').value||'0000'; cfg.idleTimeoutSec=Math.max(3,parseInt(document.getElementById('set-idle').value)||30); const cv=parseInt(document.getElementById('set-cool').value); cfg.cooldownMin=isNaN(cv)?15:Math.max(0,cv); const dv=parseInt(document.getElementById('set-drawidle').value); cfg.drawIdleSec=isNaN(dv)?5:Math.max(0,dv); saveCfg(); bootIdle(); toast('설정 저장됨'); }
+/* S3 라인업 표시/숨김 — 즉시 저장·즉시 반영 (현장 전환용) */
+function toggleLineup(){ cfg.showLineup = !lineupOn(); saveCfg(); toast(lineupOn()?'라인업(S3) 표시 — 기존 플로우':'라인업(S3) 숨김 — 뽑기 직행'); renderAdmSettings(); }
+async function admPickHeroBanner(){ const key='hero_banner_'+Date.now(); const k=await uploadImg(key); if(k){ if(cfg.heroBannerKey){try{await idbDel(cfg.heroBannerKey);}catch(e){}} cfg.heroBannerKey=k; saveCfg(); toast('히어로 배너 등록됨'); renderAdmSettings(); } }
+async function delHeroBanner(){ if(cfg.heroBannerKey){ try{await idbDel(cfg.heroBannerKey);}catch(e){} cfg.heroBannerKey=null; saveCfg(); toast('삭제됨'); renderAdmSettings(); } }
+
+/* ── 이미지 조정 모달 (위치·확대·크롭, 모든 이미지 공통) ── */
+let adjKey=null;
+function openAdjust(key, kind){
+  if(!key||!imgCache[key]){ toast('먼저 이미지를 업로드하세요'); return; }
+  adjKey=key;
+  // 실제 화면에서의 표시 비율을 계산해 미리보기에 그대로 적용 (현재 키오스크 폭 기준)
+  const kioskW=(document.getElementById('kiosk').clientWidth)||520;
+  const tab=kioskW>=600;
+  let aspect, fit='cover';
+  if(kind==='hero'){ aspect=kioskW/(tab?300:200); }
+  else if(kind==='ipcard'){ const pad=(tab?22:14)*2; aspect=(kioskW-pad)/(tab?200:118); }
+  else { aspect=1; fit='contain'; } // 경품/행운상 = 정사각(contain)
+  const a=(cfg.imgAdjust&&cfg.imgAdjust[key])||{x:50,y:50,scale:1};
+  document.getElementById('adj-preview').style.aspectRatio=(+aspect).toFixed(4);
+  const img=document.getElementById('adj-img'); img.src=imgCache[key]; img.style.objectFit=fit;
+  document.getElementById('adj-x').value=a.x; document.getElementById('adj-y').value=a.y; document.getElementById('adj-s').value=Math.round((a.scale||1)*100);
+  adjApplyPreview();
+  document.getElementById('adjust-modal').style.display='flex';
+}
+function adjVals(){ return { x:+document.getElementById('adj-x').value, y:+document.getElementById('adj-y').value, s:(+document.getElementById('adj-s').value)/100 }; }
+function adjApplyPreview(){ const v=adjVals(); const img=document.getElementById('adj-img'); img.style.objectPosition=v.x+'% '+v.y+'%'; img.style.transform='scale('+v.s+')'; img.style.transformOrigin=v.x+'% '+v.y+'%'; }
+function adjReset(){ document.getElementById('adj-x').value=50; document.getElementById('adj-y').value=50; document.getElementById('adj-s').value=100; adjApplyPreview(); }
+function adjClose(){ document.getElementById('adjust-modal').style.display='none'; adjKey=null; }
+function adjSave(){ if(!adjKey)return; const v=adjVals(); cfg.imgAdjust=cfg.imgAdjust||{}; if(v.x===50&&v.y===50&&v.s===1){ delete cfg.imgAdjust[adjKey]; } else { cfg.imgAdjust[adjKey]={x:v.x,y:v.y,scale:v.s}; } saveCfg(); toast('조정 저장됨'); adjClose(); }
+/* 미리보기 드래그-이동 → 가로/세로 위치 슬라이더와 실시간 동기화 */
+(function initAdjDrag(){
+  const pv=document.getElementById('adj-preview'); if(!pv)return;
+  let drag=false,sx,sy,svx,svy,w,h;
+  pv.addEventListener('pointerdown',function(e){ drag=true; pv.classList.add('dragging'); try{pv.setPointerCapture(e.pointerId);}catch(_){} sx=e.clientX; sy=e.clientY; svx=+document.getElementById('adj-x').value; svy=+document.getElementById('adj-y').value; const r=pv.getBoundingClientRect(); w=r.width||1; h=r.height||1; e.preventDefault(); });
+  pv.addEventListener('pointermove',function(e){ if(!drag)return; const s=(+document.getElementById('adj-s').value)/100||1; let nx=svx-(e.clientX-sx)/w*100/s; let ny=svy-(e.clientY-sy)/h*100/s; nx=Math.max(0,Math.min(100,Math.round(nx))); ny=Math.max(0,Math.min(100,Math.round(ny))); document.getElementById('adj-x').value=nx; document.getElementById('adj-y').value=ny; adjApplyPreview(); });
+  function end(){ drag=false; pv.classList.remove('dragging'); }
+  pv.addEventListener('pointerup',end); pv.addEventListener('pointercancel',end);
+})();
+function toggleMute(){ cfg.muted=!cfg.muted; saveCfg(); applyMute(); renderAdmSettings(); }
+async function uploadMedia(key,accept){
+  const f=await pickFile(accept); if(!f)return;
+  const isVid = key==='idle_video';
+  const isAudio = key.startsWith('bgm_') || key.startsWith('sfx_');
+  const cap = isVid?150:(isAudio?30:8);
+  if(f.size>cap*1024*1024){ toast(`${cap}MB 이하만 가능`); return; }
+  if(isVid || isAudio){ // iOS 안전: ArrayBuffer로 저장
+    const buf=await fileToArrayBuffer(f); if(!buf){ toast('파일 읽기 실패'); return; }
+    const ok=await idbPut(key, {buf, type:f.type||(isVid?'video/mp4':'audio/mpeg')});
+    if(!ok){ toast('저장 실패 — 용량 초과/브라우저 제한'); return; }
+    if(isVid) await bootIdle();
+    else if(key.startsWith('bgm_')) await loadBgm();
+    else await loadSfx();
+    toast('업로드 완료'); return;
+  }
+  const d=await fileToDataURL(f); if(!d)return; await idbPut(key,d); // 이미지 등은 dataURL
+  toast('업로드 완료');
+}
+async function delMedia(key){ await idbDel(key); if(key.startsWith('bgm_')){ const slot=key.slice(4); bgmEl[slot]&&(bgmEl[slot].src=''); } else if(key.startsWith('sfx_')){ const slot=key.slice(4); sfxEl[slot]&&(sfxEl[slot].src=''); } else if(key==='idle_video'){ await bootIdle(); } toast('삭제됨'); }
+/* 뽑기 NPC (이미지/영상 여러 개 → 랜덤 표시) */
+async function addNpc(accept,type){
+  const f=await pickFile(accept); if(!f)return;
+  const cap=type==='video'?60:8;
+  if(f.size>cap*1024*1024){ toast(`${cap}MB 이하만 가능`); return; }
+  const id='n'+Date.now()+Math.floor(Math.random()*1000);
+  const buf=await fileToArrayBuffer(f); if(!buf){ toast('파일 읽기 실패'); return; }
+  if(!await idbPut('npc_'+id, {buf, type:f.type||(type==='video'?'video/mp4':'image/png')})){ toast('저장 실패 — 용량/브라우저 제한'); return; }
+  if(!Array.isArray(cfg.npcs)) cfg.npcs=[];
+  cfg.npcs.push({id,type}); saveCfg();
+  toast('NPC 추가됨'); renderAdmSettings();
+}
+async function delNpc(id){ await idbDel('npc_'+id); cfg.npcs=(cfg.npcs||[]).filter(n=>n.id!==id); saveCfg(); toast('삭제됨'); renderAdmSettings(); }
+
+/* 대기영상 (여러 개 → 대기화면 진입마다 랜덤, 직전 제외) */
+async function addIdleVideo(){
+  const f=await pickFile('video/*'); if(!f)return;
+  if(f.size>150*1024*1024){ toast('150MB 이하만 가능'); return; }
+  const id='iv'+Date.now()+Math.floor(Math.random()*1000);
+  const buf=await fileToArrayBuffer(f); if(!buf){ toast('파일 읽기 실패'); return; }
+  if(!await idbPut('idlevid_'+id, {buf, type:f.type||'video/mp4'})){ toast('저장 실패 — 용량/브라우저 제한'); return; }
+  if(!Array.isArray(cfg.idleVideos)) cfg.idleVideos=[];
+  cfg.idleVideos.push({id}); saveCfg();
+  toast('대기영상 추가됨'); renderAdmSettings();
+}
+async function delIdleVideo(id){ await idbDel('idlevid_'+id); cfg.idleVideos=(cfg.idleVideos||[]).filter(x=>x.id!==id); saveCfg(); toast('삭제됨'); renderAdmSettings(); }
+
+/* ════════════════ 유틸 ════════════════ */
+function dataURLtoBlob(d){ try{ const [h,b]=d.split(','); const mime=(h.match(/:(.*?);/)||[])[1]||'image/png'; const bin=atob(b); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i); return new Blob([u],{type:mime}); }catch(e){ return null; } }
+function esc(s){ return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escAttr(s){ return String(s==null?'':s).replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+let toastTimer=null; function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),1800); }
+
+/* 화면 줌/제스처 방지 */
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
+
+/* ════════════════ 부팅 ════════════════ */
+(async function boot(){
+  await openIDB();
+  reconcileStock();
+  // npcs 배열 보정 + 기존 단일 NPC(draw_npc) 자동 이전
+  if(!Array.isArray(cfg.npcs)) cfg.npcs=[];
+  if(!cfg.imgAdjust) cfg.imgAdjust={};
+  try{
+    if(cfg.npcs.length===0){
+      const old=await idbGet('draw_npc');
+      if(old){ const id='n'+Date.now(); const blob=(typeof old==='string')?dataURLtoBlob(old):old;
+        if(blob){ await idbPut('npc_'+id,blob); cfg.npcs.push({id,type:'image'}); saveCfg(); await idbDel('draw_npc'); } }
+    }
+  }catch(e){}
+  // 대기영상: 기존 단일 idle_video → idleVideos 배열 자동 이전
+  if(!Array.isArray(cfg.idleVideos)) cfg.idleVideos=[];
+  try{
+    if(cfg.idleVideos.length===0){
+      const oldv=await idbGet('idle_video');
+      if(oldv){ const id='iv'+Date.now(); const blob=(typeof oldv==='string')?dataURLtoBlob(oldv):oldv;
+        if(blob){ await idbPut('idlevid_'+id,blob); cfg.idleVideos.push({id}); saveCfg(); await idbDel('idle_video'); } }
+    }
+  }catch(e){}
+  await loadAllImages();
+  await loadBgm();
+  await loadSfx();
+  await bootIdle();
+  applyMute();
+  // 서비스워커: 실제 배포(HTTPS 도메인)에서만 캐싱. localhost 개발 중에는 끄고 항상 최신 파일 사용.
+  const isLocal = ['localhost','127.0.0.1','::1',''].includes(location.hostname);
+  if(false){
+    if(isLocal){
+      try{
+        const regs = await navigator.serviceWorker.getRegistrations();
+        if(regs.some(r=>r.scope===new URL('./',location.href).href)){
+          const scope=new URL('./',location.href).href;
+          await Promise.all(regs.filter(r=>r.scope===scope).map(r=>r.unregister()));
+          if(window.caches){ const ks=await caches.keys(); await Promise.all(ks.filter(k=>k.startsWith('figure-draw-')).map(k=>caches.delete(k))); }
+          location.reload(); return;
+        }
+      }catch(e){}
+    } else {
+      try{ navigator.serviceWorker.register('sw.js'); }catch(e){}
+    }
+  }
+})();
+</script>
+<script src="review/v8/draw-engine.js"></script>
+<div id="summon-stage" aria-hidden="true">
+  <video id="summon-video-blur" src="assets/figure/zeratu-summon.mp4" muted playsinline preload="auto" tabindex="-1"></video>
+  <video id="summon-video" src="assets/figure/zeratu-summon.mp4" poster="assets/figure/zeratu-summon.jpg" playsinline preload="auto" tabindex="-1"></video>
+</div>
+<div id="scroll-whiteout" aria-hidden="true"></div>
+<script src="review/v8/scroll-audio.js"></script>
+<script src="review/v8/figure.js"></script>
+<script src="review/recorder.js"></script></body>
+</html>

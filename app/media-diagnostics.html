@@ -1,0 +1,21 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>소환서 영상 진단</title>
+<style>body{font:17px system-ui;max-width:760px;margin:24px auto;padding:16px;background:#191127;color:#fff}button{font:inherit;padding:12px;margin:6px;border-radius:8px}video{display:block;width:min(100%,400px);background:#000;margin:14px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}a{color:#ffe28b}</style>
+<h1>소환서 영상 진단</h1><p>앱 설정·재고는 변경하지 않습니다. 각 버튼을 한 번씩 누르고 영상 재생 여부를 확인한 뒤 결과를 저장하세요. 진단 결과는 자동 전송되지 않습니다.</p>
+<button id="idle">① 대기 영상 원본 재생</button><button id="open">② 개봉 영상 원본 재생</button><button id="blob">③ Blob 개봉 영상 재생</button><button id="seek">④ 현재 영상 중간 탐색</button><button id="save">진단 결과 저장</button>
+<video id="video" controls playsinline muted preload="auto"></video><pre id="out"></pre>
+<script>
+const video=document.getElementById('video'),out=document.getElementById('out'),rows=[];
+let blobUrl=null,mode='none';
+function record(event,extra={}){rows.push({event,mode,at:new Date().toISOString(),ready:video.readyState,network:video.networkState,time:video.currentTime,duration:video.duration,paused:video.paused,muted:video.muted,error:video.error?{code:video.error.code,message:video.error.message}:null,...extra});if(rows.length>150)rows.shift();out.textContent=JSON.stringify(rows,null,2);}
+record('environment',{userAgent:navigator.userAgent,platform:navigator.platform,touchPoints:navigator.maxTouchPoints,standalone:matchMedia('(display-mode: standalone)').matches||navigator.standalone||false,controller:navigator.serviceWorker?.controller?.scriptURL||null,h264:video.canPlayType('video/mp4; codecs="avc1.64001f, mp4a.40.2"')});
+for(const event of ['loadstart','loadedmetadata','loadeddata','canplay','playing','pause','waiting','stalled','seeking','seeked','ended','error'])video.addEventListener(event,()=>record(event));
+async function play(){try{await video.play();record('play-resolved');}catch(error){record('play-rejected',{name:error.name,message:error.message});}}
+function source(url,label){video.pause();mode=label;video.src=url;video.muted=true;video.load();record('source');play();}
+document.getElementById('idle').onclick=()=>source('assets/figure/sacred-idle.mp4','idle-url');
+document.getElementById('open').onclick=()=>source('assets/figure/sacred-open.mp4','open-url');
+document.getElementById('blob').onclick=()=>{if(blobUrl)source(blobUrl,'open-blob');else record('blob-not-ready');};
+document.getElementById('seek').onclick=()=>{video.pause();try{video.currentTime=video.duration/2;record('seek-request');}catch(error){record('seek-rejected',{message:error.message});}};
+document.getElementById('save').onclick=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(rows,null,2)],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='figure-media-diagnostics.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);};
+(async()=>{try{const r=await fetch('assets/figure/sacred-open.mp4'),b=await r.blob();blobUrl=URL.createObjectURL(b);record('blob-downloaded',{status:r.status,type:b.type,size:b.size});}catch(error){record('fetch-error',{message:error.message});}})();
+(async()=>{try{const r=await fetch('assets/figure/sacred-idle.mp4',{headers:{Range:'bytes=0-1'}});record('range-response',{status:r.status,range:r.headers.get('Content-Range'),size:(await r.arrayBuffer()).byteLength});}catch(error){record('range-error',{message:error.message});}})();
+</script></html>
