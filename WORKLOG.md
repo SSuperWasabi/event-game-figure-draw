@@ -1,5 +1,14 @@
 # 작업 일지
 
+## 2026-09-10 — figure-v12 소환서 인코딩 호환성 결함
+
+- 사용자가 제공한 v8/v9/v11 진단에서 scroll-idle-video와 scroll-video는 모두 readyState=0, networkState=3, duration=null로 실패했다. 메인/소환 연출은 Blob에서도 readyState=4였다. 단순 자동재생 차단이나 Blob 전체 실패로 설명할 수 없다.
+- 배포 소환서 두 파일의 AVC/SPS level_idc=62, num_units_in_tick=1, time_scale=30720을 확인했다. 정상 소환 연출은 level_idc=41, time_scale=60이었다. 해당 iPad 공식 사양은 H.264 High Level 4.2까지다: https://support.apple.com/en-us/111979
+- 기존 변환 명령을 원본에 다시 실행해 Level 6.2와 `MB rate (31104000) > level limit (16711680)` 경고를 재현했다. 기존 생성 명령은 프레임 레이트/인코더 시간 기준을 고정하지 않았다.
+- 두 MP4를 원본에서 fps=30, enc_time_base=1:30, High Level 3.1, yuv420p로 재생성했다. 구간 경계 101/30, 개봉 GOP=1, 원본과 별도 WAV는 유지했다. 재발 방지용 실제 비트스트림/전체 디코딩 검사를 추가했다.
+- 앱/캐시 v12. 사전 캐시 요청 cache=reload로 오래된 HTTP 캐시의 영상 재사용을 막는다. 참가자 동작 로직은 이번 수정에서 바꾸지 않았다.
+- 인코딩 검사, 실제 Chrome 지연 재생·자동 오픈·드래그, 기존 추첨·SW 검사를 통과했다. iPad에서 수정본 성공은 아직 검증하지 않았다. 과거 정상 시점에 어떤 파일/캐시가 사용됐는지는 현재 자료로 확정할 수 없다.
+
 ## 2026-09-10 — figure-v11 실제 영상 지연 로딩 회귀 수정
 
 - 배포 MP4 두 파일의 HTTP 200, video/mp4, 로컬 SHA-256 일치를 확인했다. 배포 v10은 Chrome 정상 로딩에서는 재생됐다.
