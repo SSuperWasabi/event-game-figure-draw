@@ -8,6 +8,7 @@ const ScrollSound=(()=>{
       const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return;
       context=typeof audioCtx==='function'?audioCtx():new Audio();
       forward=await load('assets/figure/sacred-open.wav');
+      clips.open=forward; // Automatic reveal shares the decoded drag audio and BGM context.
       reverse=context.createBuffer(forward.numberOfChannels,forward.length,forward.sampleRate);
       for(let c=0;c<forward.numberOfChannels;c++){const src=forward.getChannelData(c),dst=reverse.getChannelData(c);for(let i=0;i<src.length;i++)dst[i]=src[src.length-1-i];}
       for(const [name,url] of [['idle','assets/figure/sacred-idle.wav'],['summon','assets/figure/zeratu-summon.wav']]){

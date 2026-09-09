@@ -55,7 +55,9 @@ const server=http.createServer((req,res)=>{
     setBgmDucked(false);startBgm('idle');await bgmEl.idle.play();
     const analyser=c.createAnalyser();bgmGains.get(bgmEl.idle).connect(analyser);analyser.fftSize=2048;
     const wait=()=>new Promise(r=>setTimeout(r,150)),rms=()=>{const data=new Float32Array(2048);analyser.getFloatTimeDomainData(data);return Math.sqrt(data.reduce((sum,v)=>sum+v*v,0)/data.length);};
-    await wait();const normal=rms();setBgmDucked(true);startBgm('play');await wait();const ducked=rms();
+    await wait();const normal=rms();revealScroll();await wait();const ducked=rms();
+    const openingMuted=scrollVideo().muted,sharedOpening=openingAudioActive&&!openingNativeAudio;
+    openingAudioActive=false;scrollVideo().pause();ScrollSound.stop();
     setBgmDucked(false);await wait();const restored=rms();bgmEl.idle.pause();
     const fxAnalyser=c.createAnalyser(),createGain=c.createGain.bind(c);
     c.createGain=()=>{const gain=createGain();gain.connect(fxAnalyser);return gain;};
@@ -64,9 +66,10 @@ const server=http.createServer((req,res)=>{
     sfxBuf.special=buffer;playSfx('fanfare');await wait();
     const data=new Float32Array(fxAnalyser.fftSize);fxAnalyser.getFloatTimeDomainData(data);const effect=Math.sqrt(data.reduce((sum,v)=>sum+v*v,0)/data.length);
     c.createGain=createGain;analyser.disconnect();fxAnalyser.disconnect();URL.revokeObjectURL(url);
-    return {normal,ducked,restored,effect};
+    return {normal,ducked,restored,effect,openingMuted,sharedOpening};
   });
   assert.ok(measured.normal>.05);assert.ok(Math.abs(measured.ducked/measured.normal-.25)<.03,JSON.stringify(measured));
+  assert.equal(measured.openingMuted,true);assert.equal(measured.sharedOpening,true);
   assert.ok(Math.abs(measured.restored/measured.normal-1)<.08);assert.ok(measured.effect>.1);
   console.log('PASS: real WebAudio RMS verifies 25% BGM attenuation/restoration and audible uploaded fanfare signal',measured);
  }finally{await browser.close();}

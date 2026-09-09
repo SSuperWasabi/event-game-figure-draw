@@ -22,6 +22,7 @@ function scrollMix(active){
 function scrollWhiteout(value,fade=false){const el=document.getElementById('scroll-whiteout');el.style.transition=fade?'opacity 400ms ease-out':'none';el.style.opacity=String(Math.max(0,Math.min(1,value)));}
 function updateScrollWhiteout(time){const duration=scrollVideo().duration;if(Number.isFinite(duration))scrollWhiteout((time-(duration-.3))/.3);}
 let scrollSeekReady=false,figureObjectUrls=[],scrollPlaybackFailed=false;
+let openingAudioActive=false,openingNativeAudio=false;
 let scrollPrepareTask=null,scrollAutoPending=false,scrollReadyTimer=null,scrollPrimeTask=null;
 let scrollPrimeEpoch=0;
 let scrollPreparedUrl=null;
@@ -104,6 +105,7 @@ function waitForScroll(){
 if(typeof fetch==='function'){prepareScrollVideo();prepareBlobVideo(['summon-video','summon-video-blur']).catch(()=>{ /* Progressive playback from the original URL remains. */ });}
 window.addEventListener('pagehide',e=>{if(!e.persisted){figureObjectUrls.forEach(url=>URL.revokeObjectURL(url));figureObjectUrls=[];}});
 function startScrollLoop(){
+  openingAudioActive=false;
   cancelScrollWait();
   scrollPrimeEpoch++;scrollPrimeTask=null;
   ScrollSound.stop();scrollMix(currentScreen==='scr-open');scrollWhiteout(0);
@@ -152,6 +154,7 @@ scrollVideo().addEventListener('canplay',scrollMediaReady);
 scrollVideo().addEventListener('seeked',scrollMediaReady);
 // Shared ending for both paths: fully white, result screen underneath, then the white lifts.
 function finishScrollReveal(){
+  openingAudioActive=false;
   ScrollSound.stop();scrollScrubbing=false;scrollSeekTarget=null;scrollVideo().pause();scrollWhiteout(1);clearTimeout(openingTimer);
   const epoch=figureEpoch;
   if(lastResult&&lastResult.high)playSummon(epoch);else{showResult();startResultMedia();}
@@ -161,18 +164,26 @@ scrollVideo().addEventListener('ended',()=>{if(drawing&&currentScreen==='scr-ope
 scrollVideo().addEventListener('timeupdate',()=>{if(drawing&&currentScreen==='scr-open')updateScrollWhiteout(scrollVideo().currentTime);});
 function scrollPlaybackError(){
   if(!drawing||currentScreen!=='scr-open')return;
+  openingAudioActive=false;
   ScrollSound.stop();scrollPlaybackFailed=true;const btn=document.getElementById('scroll-open-btn');btn.disabled=false;btn.textContent='소환 영상 다시 재생';
   toast('영상 재생이 중단되었습니다. 다시 재생해주세요');
 }
 scrollVideo().addEventListener('error',scrollPlaybackError);
 function playOpeningVideo(){
   const v=scrollVideo();scrollSeekTarget=null;scrollScrubbing=false;scrollPlaybackFailed=false;
-  ScrollSound.stop();scrollMix(true);v.muted=!!cfg.muted;v.volume=1;
+  openingAudioActive=true;openingNativeAudio=!ScrollSound.has('open');
+  ScrollSound.stop();scrollMix(true);unlockAudio();v.muted=openingNativeAudio?!!cfg.muted:true;v.volume=1;
   document.getElementById('scroll-open-btn').disabled=true;
   v.loop=false;v.play().catch(scrollPlaybackError);
 }
+scrollVideo().addEventListener('playing',()=>{
+  if(openingAudioActive&&!openingNativeAudio&&drawing&&currentScreen==='scr-open')ScrollSound.cue('open',scrollVideo().currentTime,!!cfg.muted);
+});
+for(const event of ['waiting','pause'])scrollVideo().addEventListener(event,()=>{
+  if(openingAudioActive&&!openingNativeAudio)ScrollSound.stop();
+});
 go = function(id){
-  if(id!=='scr-open'){cancelScrollWait();scrollPrimeEpoch++;scrollPrimeTask=null;}
+  if(id!=='scr-open'){openingAudioActive=false;cancelScrollWait();scrollPrimeEpoch++;scrollPrimeTask=null;}
   figureBase.go(id);
   if(id==='scr-open')startScrollLoop();else{ScrollSound.stop();scrollMix(false);scrollScrubbing=false;scrollSeekTarget=null;scrollVideo().pause();document.getElementById('scroll-idle-video').pause();if(id!=='scr-result'){cancelAnimationFrame(whiteoutFrame);scrollWhiteout(0);}}
   for(const key of ['idle-video','idle-video-blur']){const v=document.getElementById(key);if(id==='scr-idle'&&v.getAttribute('src')&&v.style.display!=='none')v.play().catch(()=>{});else v.pause();}

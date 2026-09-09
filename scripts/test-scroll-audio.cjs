@@ -18,6 +18,7 @@ function harness(idleAvailable){
 const full=harness(true),partial=harness(false);
 setImmediate(()=>{
  const {calls,context}=full,audio=full.audio();
+ assert.equal(context.sound.has('open'),true);assert.equal(partial.context.sound.has('open'),true);
  context.sound.begin();context.sound.scrub(.3,false);assert.deepEqual(calls[0].samples,[0,1,2,3]);
  audio.currentTime=.05;context.sound.scrub(.1,false);assert.deepEqual(calls[1].samples,[3,2,1,0]);
  const count=calls.length;audio.currentTime=.1;context.sound.scrub(.1,false);assert.equal(calls.length,count);
@@ -38,4 +39,7 @@ setImmediate(()=>{
  const s2=calls.length;assert.equal(context.sound.cue('summon',0,true),true);assert.ok(calls.slice(s2).every(c=>c.stopped));
  assert.equal(partial.context.sound.has('summon'),false);assert.equal(partial.context.sound.cue('summon',0,false),false);
  console.log('PASS: idle bed offset/loop, summon one-shot cue/clamp, mute, stop on scrub, and fallback signal when the idle buffer is unavailable');
+ const op=calls.length;context.sound.cue('open',.4,false);
+ const opening=calls.slice(op).find(c=>!c.stopped);assert.equal(opening.loop,false);assert.equal(opening.args[1],.4);
+ console.log('PASS: automatic opening reuses decoded forward audio at the video offset');
 });

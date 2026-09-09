@@ -9,6 +9,8 @@
 
 ## 현재 상태
 
+figure-v15: 자동 오픈도 기존 sacred-open.wav 디코딩 버퍼를 공유 AudioContext로 재생한다. 해당 버퍼가 있으면 영상 자체는 무음이며 playing에서 영상 위치에 맞춰 소리를 시작하고 waiting/pause에서 멈춘다. 드래그와 자동 오픈의 BGM은 같은 GainNode 경로로 25%를 유지한다. 버퍼 로딩/디코딩 실패 시에만 기존 영상 오디오를 대체 경로로 사용한다. iPad에서 자동 오픈 중 BGM이 유지되는지 최종 확인이 필요하다.
+
 figure-v13: BGM 볼륨은 Web Audio GainNode로 기본 0.4, 소환서 화면 0.1(25%)을 적용한다. 감소 여부를 별도 상태로 보존하여 BGM 재호출·음소거 해제 시에도 유지한다. 연속 모드에서는 동일한 오디오 요소와 재생 위치를 유지한다. 효과음과 소환서 오디오는 하나의 AudioContext를 사용하고 사용자 터치에서 활성화한다. 효과음은 suspended/interrupted 상태의 resume 완료 후 재생한다. `node scripts/test-audio-mix.cjs`와 실제 브라우저 테스트에서 Gain·효과음 신호를 확인했다. iPad 실기기 확인은 별도로 필요하다.
 
 figure-v12: iPad 진단에서 소환서 두 MP4만 메타데이터 로딩 전 실패했다. 실제 H.264 헤더가 Level 6.2 및 SPS time_scale=30720으로 생성된 문제를 기존 변환 명령으로 재현했다. 원본에서 30fps·인코더 time base 1/30·High Level 3.1로 재생성했고, `node scripts/test-scroll-encoding.cjs`로 AVC/SPS 및 전체 디코딩을 검증한다. 새 서비스 워커 설치는 HTTP 캐시를 재검증하여 이전 영상이 다시 들어오지 않도록 한다. iPad 실기기 최종 재생 확인은 아직 필요하다.

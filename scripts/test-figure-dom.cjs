@@ -88,6 +88,15 @@ assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log
 assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log[0].figureWinPercent,null);
 assert.ok(w.document.getElementById('scr-open').classList.contains('active'));
 assert.equal(evaluate('openingTimer'),null);
+evaluate("var autoAudioSaved={has:ScrollSound.has,cue:ScrollSound.cue,stop:ScrollSound.stop};var autoCues=[],autoStops=0;ScrollSound.has=n=>n==='open';ScrollSound.cue=(n,t,m)=>{autoCues.push([n,t,m]);return true;};ScrollSound.stop=()=>{autoStops++;};cfg.muted=false;");
+w.playOpeningVideo();assert.equal(video.muted,true);
+video.currentTime=.25;video.dispatchEvent(new w.Event('playing'));
+assert.equal(evaluate('autoCues[0][0]'),'open');assert.equal(evaluate('autoCues[0][1]'),.25);
+const stopsBefore=evaluate('autoStops');video.dispatchEvent(new w.Event('waiting'));assert.equal(evaluate('autoStops'),stopsBefore+1);
+video.currentTime=.75;video.dispatchEvent(new w.Event('playing'));assert.equal(evaluate('autoCues[1][1]'),.75);
+assert.equal(evaluate('bgmDucked'),true);
+evaluate('Object.assign(ScrollSound,autoAudioSaved);cfg.muted=true');
+console.log('PASS: automatic reveal keeps native video muted and cues/pauses shared audio at playback offsets');
 video.dispatchEvent(new w.Event('error'));
 assert.equal(w.document.getElementById('scroll-open-btn').disabled,false);
 w.revealScroll();assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log.length,1);
