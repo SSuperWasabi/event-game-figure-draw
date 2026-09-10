@@ -77,3 +77,25 @@
 
 #scr-idle .idle-brand,#scr-idle #idle-banner,#scr-idle .copyright{position:absolute!important}
 #scr-idle #idle-banner{animation:none}
+
+/* v17: title above the centered 16:9 frame, touch target below it. */
+#scr-idle .idle-brand{top:max(110px,calc((100dvh - 56.25vw)/4));gap:clamp(8px,1.2vh,18px)}
+#scr-idle .idle-wordmark{width: min(43vw,360px)}
+#scr-idle .idle-headline .ld-2{font-size:min(13.2vw,9vh,135px);line-height:1.02}
+#scr-idle #idle-banner{top:min(calc(100dvh - 110px),calc(75dvh + 14.0625vw));font-size:37.5px;padding:27px 63px}
+#scr-idle .copyright,#scr-idle .idle-credit,#scr-idle #idle-version{position:absolute!important;bottom:max(16px,env(safe-area-inset-bottom));font-size:clamp(10px,1.2vw,14px);color:#ffffffb3;z-index:3}
+#scr-idle .copyright{left:20px}#scr-idle .idle-credit{right:20px}#scr-idle #idle-version{left:50%;transform:translateX(-50%)}
+.selection-visibility-card .adm-row{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:56px}
+.selection-visibility-card .adm-row label{width:auto;flex:1;font-size:18px;color:white}
+#hide-scroll-selection{appearance:none;-webkit-appearance:none;position:relative;flex:none;width:64px;height:36px;border-radius:24px;background:#655681;border:2px solid #c9b0e8;cursor:pointer}
+#hide-scroll-selection:before{content:'';position:absolute;left:4px;top:4px;width:24px;height:24px;border-radius:50%;background:white}
+#hide-scroll-selection:checked{background:#ffc928;border-color:#ffeaa0}#hide-scroll-selection:checked:before{left:32px;background:#38210a}
+@media(max-aspect-ratio:3/4){#scr-idle .idle-brand{top:calc((100dvh - 56.25vw)/4)}}
+@media(min-aspect-ratio:1/1){#scr-idle .idle-brand{top:18%;gap:6px}#scr-idle .idle-headline .ld-2{font-size:min(8vw,8vh)}#scr-idle .idle-wordmark{width:min(25vw,220px)}#scr-idle #idle-banner{top:82%;font-size:30px;padding:18px 50px}}
+
+/* Slightly lower the logo/title group while retaining the video clearance. */
+#scr-idle .idle-brand{translate:0 24px}
+
+/* Geometry is recalculated for each randomly selected video and viewport size. */
+#scr-idle .idle-brand{top:var(--idle-title-y,20%);translate:none}
+#scr-idle #idle-banner{top:var(--idle-touch-y,82%)}

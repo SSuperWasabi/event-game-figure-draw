@@ -1,4 +1,5 @@
 /* Figure Draw participant journey. v31 admin/media/backup remains the base. */
+document.getElementById('idle-version').textContent=APP_VER;
 let selectedScroll=null, openingFrame=0, openingTimer=null, resultTick=null, resultDeadline=0;
 let figureMediaUrls=[], figurePopup=null, figureEpoch=0;
 const figureBase={renderAdmIps,renderAdmSettings,renderResult,resetToIdle,bootIdle,go,startBgm};
@@ -186,7 +187,7 @@ for(const event of ['waiting','pause'])scrollVideo().addEventListener(event,()=>
 });
 go = function(id){
   if(id!=='scr-open'){openingAudioActive=false;cancelScrollWait();scrollPrimeEpoch++;scrollPrimeTask=null;}
-  figureBase.go(id);
+  figureBase.go(id);if(id==='scr-idle')syncIdleTitleLayout();
   if(id==='scr-open')startScrollLoop();else{ScrollSound.stop();scrollMix(false);scrollScrubbing=false;scrollSeekTarget=null;scrollVideo().pause();document.getElementById('scroll-idle-video').pause();if(id!=='scr-result'){cancelAnimationFrame(whiteoutFrame);scrollWhiteout(0);}}
   for(const key of ['idle-video','idle-video-blur']){const v=document.getElementById(key);if(id==='scr-idle'&&v.getAttribute('src')&&v.style.display!=='none')v.play().catch(()=>{});else v.pause();}
 };
@@ -291,7 +292,7 @@ function completeScrollDrag(){
 })();
 renderResult = function(){
   figureBase.renderResult();
-  document.querySelector('#scr-result h2').textContent=lastResult.high?'제라투 소환 성공!':'아쉽네요! 다음 기회를 노려보아요!';
+  document.querySelector('#scr-result h2').textContent=lastResult.high?'제라투 소환 성공!':'아쉽네요!';
   document.getElementById('rc-grade').textContent=lastResult.high?'피규어 당첨':'';
   document.getElementById('rc-grade').hidden=!lastResult.high;
   document.getElementById('scr-result').classList.toggle('participation-result',!lastResult.high);
@@ -360,6 +361,10 @@ renderAdmSettings = function(){
   figureBase.renderAdmSettings();
   const root=document.getElementById('pane-settings'),card=document.createElement('div');card.className='adm-card';
   card.innerHTML=`<h4>피규어 드로우</h4><div class="adm-row"><label for="hide-scroll-selection">소환서 선택 화면 숨김</label><input id="hide-scroll-selection" type="checkbox" role="switch" ${cfg.hideScrollSelection===true?'checked':''} onchange="saveScrollSelectionVisibility()"></div><p class="figure-rule-note">켜면 메인에서 소환서를 자동 선택하여 개봉 화면으로 바로 이동합니다. 변경 즉시 저장됩니다.</p><div class="adm-row"><label for="figure-probability-enabled">피규어 당첨 확률 사용</label><input id="figure-probability-enabled" type="checkbox" role="switch" ${figureProbabilityEnabled()?'checked':''} onchange="updateFigureRuleInputs()" style="flex:none;width:24px;height:24px"></div><div class="adm-row"><label for="figure-percent">피규어 확률 (%)</label><input id="figure-percent" type="number" min="0" max="100" step="any" value="${figurePercent()}" ${figureProbabilityEnabled()?'':'disabled'}></div><p id="figure-mode-note" class="figure-rule-note" aria-live="polite"></p><p class="figure-rule-note">소환서 번호는 확률에 영향을 주지 않습니다. 결과는 무입력 5초 후 복귀합니다. 변경 후 저장 버튼을 눌러 적용하세요.</p><button class="adm-btn pri" onclick="saveFigureRules()">추첨 방식 저장</button>`;root.prepend(card);updateFigureRuleInputs();
+  const visibility=document.createElement('div');visibility.className='adm-card selection-visibility-card';
+  visibility.innerHTML='<h4>현장 운영 · 시퀀스 간소화</h4>';
+  const visibilityRow=document.getElementById('hide-scroll-selection').closest('.adm-row');
+  const visibilityNote=visibilityRow.nextElementSibling;visibility.append(visibilityRow,visibilityNote);root.prepend(visibility);
   ['set-cool','set-drawidle'].forEach(id=>{const el=document.getElementById(id);el.disabled=true;el.title='피규어 드로우에서는 사용하지 않는 기존 쿠지 설정';});
   root.querySelector('button[onclick="toggleLineup()"]').disabled=true;
   // BGM playback mode lives inside the existing BGM card.
@@ -398,3 +403,32 @@ function saveFigureRules(){
   refreshIdleSoldout();toast(enabled?'설정 확률 추첨으로 저장됨':'재고 비례 추첨으로 저장됨');
 }
 bootIdle();
+
+// Position overlays from the actual contained video's geometry; never change playback.
+function syncIdleTitleLayout(){
+  const screen=document.getElementById('scr-idle'),v=document.getElementById('idle-video');
+  const w=screen.clientWidth,h=screen.clientHeight;if(!w||!h)return;
+  const known=v.style.display!=='none'&&v.videoWidth>0&&v.videoHeight>0;
+  const ratio=known?v.videoWidth/v.videoHeight:16/9;
+  const landscape=ratio>1;screen.dataset.videoOrientation=landscape?'landscape':'portrait';
+  const brand=screen.querySelector('.idle-brand'),button=document.getElementById('idle-banner');
+  const brandHeight=brand.getBoundingClientRect().height,buttonHeight=button.getBoundingClientRect().height;
+  const videoHeight=Math.min(h,w/ratio),gap=(h-videoHeight)/2;
+  // Only use letterbox margins when both groups fit; otherwise overlay upper/lower portions.
+  const margins=landscape&&gap>=brandHeight+48&&gap>=buttonHeight+64;
+  let titleY=margins?Math.min(gap-brandHeight/2-12,gap/2+24):Math.max(brandHeight/2+24,h*(landscape?.19:1/3)+24);
+  let buttonY=margins?h-gap/2:h*(landscape?.82:.74);
+  if(!landscape){
+    const spacing=Math.min(72,Math.max(28,h*.045));
+    const groupHeight=brandHeight+spacing+buttonHeight;
+    const groupTop=Math.max(24,(h-groupHeight)/2);
+    titleY=groupTop+brandHeight/2;
+    buttonY=groupTop+brandHeight+spacing+buttonHeight/2;
+  }
+  screen.style.setProperty('--idle-title-y',Math.min(h-buttonHeight-100,titleY)+'px');
+  screen.style.setProperty('--idle-touch-y',Math.min(h-buttonHeight/2-60,buttonY)+'px');
+}
+for(const event of ['loadedmetadata','resize','emptied'])document.getElementById('idle-video').addEventListener(event,syncIdleTitleLayout);
+window.addEventListener('resize',syncIdleTitleLayout);
+if(document.fonts)document.fonts.ready.then(syncIdleTitleLayout);
+requestAnimationFrame(syncIdleTitleLayout);
