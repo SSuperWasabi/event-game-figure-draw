@@ -22,6 +22,7 @@ function scrollMix(active){
 function scrollWhiteout(value,fade=false){const el=document.getElementById('scroll-whiteout');el.style.transition=fade?'opacity 400ms ease-out':'none';el.style.opacity=String(Math.max(0,Math.min(1,value)));}
 function updateScrollWhiteout(time){const duration=scrollVideo().duration;if(Number.isFinite(duration))scrollWhiteout((time-(duration-.3))/.3);}
 let scrollSeekReady=false,figureObjectUrls=[],scrollPlaybackFailed=false;
+const AUTO_OPEN_RATE=1.8;
 let openingAudioActive=false,openingNativeAudio=false;
 let scrollPrepareTask=null,scrollAutoPending=false,scrollReadyTimer=null,scrollPrimeTask=null;
 let scrollPrimeEpoch=0;
@@ -125,7 +126,7 @@ function startScrollLoop(){
 }
 function beginScrollScrub(){
   const v=scrollVideo();
-  v.pause();v.muted=true;v.loop=false;scrollScrubbing=true;ScrollSound.begin();scrollMix(true);
+  v.pause();v.playbackRate=1;v.muted=true;v.loop=false;scrollScrubbing=true;ScrollSound.begin();scrollMix(true);
   const box=document.getElementById('scroll-drag');
   // Hide the previous decoded frame BEFORE requesting the rewind. Seeking is asynchronous.
   box.classList.remove('video-ready');box.classList.add('scrubbing');setScrollProgress(0);
@@ -174,10 +175,11 @@ function playOpeningVideo(){
   openingAudioActive=true;openingNativeAudio=!ScrollSound.has('open');
   ScrollSound.stop();scrollMix(true);unlockAudio();v.muted=openingNativeAudio?!!cfg.muted:true;v.volume=1;
   document.getElementById('scroll-open-btn').disabled=true;
+  v.playbackRate=AUTO_OPEN_RATE;v.preservesPitch=false;if("webkitPreservesPitch" in v)v.webkitPreservesPitch=false;
   v.loop=false;v.play().catch(scrollPlaybackError);
 }
 scrollVideo().addEventListener('playing',()=>{
-  if(openingAudioActive&&!openingNativeAudio&&drawing&&currentScreen==='scr-open')ScrollSound.cue('open',scrollVideo().currentTime,!!cfg.muted);
+  if(openingAudioActive&&!openingNativeAudio&&drawing&&currentScreen==='scr-open')ScrollSound.cue('open',scrollVideo().currentTime,!!cfg.muted,false,scrollVideo().playbackRate);
 });
 for(const event of ['waiting','pause'])scrollVideo().addEventListener(event,()=>{
   if(openingAudioActive&&!openingNativeAudio)ScrollSound.stop();
@@ -202,7 +204,9 @@ refreshIdleSoldout = function(){
 bootIdle = async function(){await figureBase.bootIdle();document.getElementById('idle-sub').textContent='';} // The idle screen shows the logo lockup only.
 function startFigureGame(){
   const state=figureAvailable();if(!state.ok){toast(state.reason);return;}
-  startBgm('select');selectedScroll=null;renderScrollSelection();go('scr-scrolls');
+  selectedScroll=null;
+  if(cfg.hideScrollSelection===true){selectedScroll=Math.floor(Math.random()*12);openSelectedScroll();return;}
+  startBgm('select');renderScrollSelection();go('scr-scrolls');
 }
 document.getElementById('scr-idle').addEventListener('click',e=>{
   if(e.target.closest('#admin-tap'))return;
@@ -215,6 +219,7 @@ function renderScrollSelection(){
 }
 function chooseScroll(i){selectedScroll=selectedScroll===i?null:i;playSfx('pick');renderScrollSelection();manageIdle();}
 function randomScroll(){selectedScroll=Math.floor(Math.random()*12);playSfx('pick');renderScrollSelection();manageIdle();}
+function backFromScroll(){if(!drawing){if(cfg.hideScrollSelection===true)resetToIdle();else go('scr-scrolls');}}
 function openSelectedScroll(){
   if(selectedScroll==null)return;
   if(scrollPreparedUrl&&scrollVideo().getAttribute('src')!==scrollPreparedUrl){scrollVideo().src=scrollPreparedUrl;scrollVideo().load();}
@@ -286,8 +291,11 @@ function completeScrollDrag(){
 })();
 renderResult = function(){
   figureBase.renderResult();
-  document.querySelector('#scr-result h2').textContent=lastResult.high?'제라투 소환 성공!':'참여해주셔서 감사합니다!';
-  document.getElementById('rc-grade').textContent=lastResult.high?'피규어 당첨':'참가상';
+  document.querySelector('#scr-result h2').textContent=lastResult.high?'제라투 소환 성공!':'아쉽네요! 다음 기회를 노려보아요!';
+  document.getElementById('rc-grade').textContent=lastResult.high?'피규어 당첨':'';
+  document.getElementById('rc-grade').hidden=!lastResult.high;
+  document.getElementById('scr-result').classList.toggle('participation-result',!lastResult.high);
+  if(!lastResult.high)document.getElementById('rc-name').textContent='아쉽게도 당첨을 놓쳤어요!\n다음 기회를 노려보아요!';
   if(!lastResult.wonImageKey&&lastResult.high){document.getElementById('rc-img').innerHTML='<img src="assets/figure/zeratu.webp" alt="제라투 피규어">';}
   clearInterval(resultTick);resultTick=setInterval(updateResultCountdown,200);
 }
@@ -351,7 +359,7 @@ function removeFigureVideo(ii,pi,field){const p=cfg.ips[ii].prizes[pi],old=p[fie
 renderAdmSettings = function(){
   figureBase.renderAdmSettings();
   const root=document.getElementById('pane-settings'),card=document.createElement('div');card.className='adm-card';
-  card.innerHTML=`<h4>피규어 드로우</h4><div class="adm-row"><label for="figure-probability-enabled">피규어 당첨 확률 사용</label><input id="figure-probability-enabled" type="checkbox" role="switch" ${figureProbabilityEnabled()?'checked':''} onchange="updateFigureRuleInputs()" style="flex:none;width:24px;height:24px"></div><div class="adm-row"><label for="figure-percent">피규어 확률 (%)</label><input id="figure-percent" type="number" min="0" max="100" step="any" value="${figurePercent()}" ${figureProbabilityEnabled()?'':'disabled'}></div><p id="figure-mode-note" class="figure-rule-note" aria-live="polite"></p><p class="figure-rule-note">소환서 번호는 확률에 영향을 주지 않습니다. 결과는 무입력 5초 후 복귀합니다. 변경 후 저장 버튼을 눌러 적용하세요.</p><button class="adm-btn pri" onclick="saveFigureRules()">추첨 방식 저장</button>`;root.prepend(card);updateFigureRuleInputs();
+  card.innerHTML=`<h4>피규어 드로우</h4><div class="adm-row"><label for="hide-scroll-selection">소환서 선택 화면 숨김</label><input id="hide-scroll-selection" type="checkbox" role="switch" ${cfg.hideScrollSelection===true?'checked':''} onchange="saveScrollSelectionVisibility()"></div><p class="figure-rule-note">켜면 메인에서 소환서를 자동 선택하여 개봉 화면으로 바로 이동합니다. 변경 즉시 저장됩니다.</p><div class="adm-row"><label for="figure-probability-enabled">피규어 당첨 확률 사용</label><input id="figure-probability-enabled" type="checkbox" role="switch" ${figureProbabilityEnabled()?'checked':''} onchange="updateFigureRuleInputs()" style="flex:none;width:24px;height:24px"></div><div class="adm-row"><label for="figure-percent">피규어 확률 (%)</label><input id="figure-percent" type="number" min="0" max="100" step="any" value="${figurePercent()}" ${figureProbabilityEnabled()?'':'disabled'}></div><p id="figure-mode-note" class="figure-rule-note" aria-live="polite"></p><p class="figure-rule-note">소환서 번호는 확률에 영향을 주지 않습니다. 결과는 무입력 5초 후 복귀합니다. 변경 후 저장 버튼을 눌러 적용하세요.</p><button class="adm-btn pri" onclick="saveFigureRules()">추첨 방식 저장</button>`;root.prepend(card);updateFigureRuleInputs();
   ['set-cool','set-drawidle'].forEach(id=>{const el=document.getElementById(id);el.disabled=true;el.title='피규어 드로우에서는 사용하지 않는 기존 쿠지 설정';});
   root.querySelector('button[onclick="toggleLineup()"]').disabled=true;
   // BGM playback mode lives inside the existing BGM card.
@@ -360,6 +368,11 @@ renderAdmSettings = function(){
     box.innerHTML=`<div class="adm-row"><label for="bgm-mode">재생 방식</label><select id="bgm-mode" onchange="saveBgmMode()"><option value="screen" ${bgmSingle()?'':'selected'}>화면별 전환</option><option value="single" ${bgmSingle()?'selected':''}>한 곡 연속 루핑</option></select></div><div class="adm-row"><label for="bgm-single-slot">연속 재생 곡</label><select id="bgm-single-slot" onchange="saveBgmMode()" ${bgmSingle()?'':'disabled'}>${BGM_SLOTS.map(s=>`<option value="${s}" ${bgmSingleSlot()===s?'selected':''}>${{idle:'대기',select:'선택',play:'뽑기'}[s]} 슬롯</option>`).join('')}</select></div><p class="figure-rule-note">한 곡 연속 루핑이면 화면이 바뀌어도 선택한 슬롯의 곡이 끊기지 않고 이어집니다. 소환서 화면과 개봉 연출 중 BGM 볼륨 자동 감소(25%)와 음소거는 그대로 적용됩니다. 선택한 슬롯에 업로드된 곡이 없으면 무음입니다.</p>`;
     bgmHead.parentElement.appendChild(box);}
   const note=document.createElement('p');note.className='figure-rule-note';note.textContent='소환서 선택 → 드래그 개봉 → 결과 흐름을 사용합니다. 기존 라인업·NPC·쿨다운 설정은 보존되지만 이 흐름에는 적용하지 않습니다. 대기 영상과 BGM·효과음은 그대로 사용할 수 있습니다.';card.appendChild(note);
+}
+function saveScrollSelectionVisibility(){
+  const old=cfg.hideScrollSelection;cfg.hideScrollSelection=document.getElementById('hide-scroll-selection').checked;
+  if(!saveCfg()){cfg.hideScrollSelection=old;renderAdmSettings();toast('설정 저장 실패');return;}
+  toast('소환서 선택 화면 설정 저장됨');
 }
 function saveBgmMode(){
   const mode=document.getElementById('bgm-mode').value,slot=document.getElementById('bgm-single-slot').value;

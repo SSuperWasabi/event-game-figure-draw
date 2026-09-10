@@ -393,11 +393,11 @@
     <div id="admin-tap"></div>
     <div class="idle-brand">
       <img class="idle-wordmark" src="assets/com2us-store-logo-white.svg" alt="COM2US STORE">
-      <div id="idle-logo" class="idle-headline"><span class="ld-1">ZERATU</span><span class="ld-2">FIGURE DRAW</span></div>
+      <div id="idle-logo" class="idle-headline"><span class="ld-2">LUCKY DRAW</span></div>
       <div class="idle-sub" id="idle-sub"></div>
     </div>
     <div class="touch-banner" id="idle-banner">화면을 터치하면 시작합니다.</div>
-    <div class="copyright">2026 © Com2uS Figure Draw</div>
+    <div class="copyright">2026 © Com2uS Lucky Draw</div>
   </div>
 
   <!-- S2 IP 선택 -->
@@ -474,7 +474,7 @@
     <div class="figure-footer"><button class="btn btn-yellow" id="scroll-next" onclick="openSelectedScroll()" disabled>소환서 열기</button><p>12개의 소환서 중 하나를 선택해주세요</p></div>
   </div>
   <div class="screen figure-screen" id="scr-open">
-    <div class="topbar"><button class="back" id="open-back" onclick="if(!drawing)go('scr-scrolls')" aria-label="소환서 다시 선택">←</button><div class="title">소환서를 펼쳐주세요<span id="open-number" class="open-number"></span></div></div>
+    <div class="topbar"><button class="back" id="open-back" onclick="backFromScroll()" aria-label="소환서 다시 선택">←</button><div class="title">소환서를 펼쳐주세요<span id="open-number" class="open-number"></span></div></div>
     <div class="scroll-theatre">
       <div class="summon-ring"></div>
       <div class="scroll-drag" id="scroll-drag" role="button" tabindex="0" aria-label="왼쪽에서 오른쪽으로 드래그해 소환서 열기. Enter 키로도 열 수 있습니다.">
@@ -537,7 +537,7 @@
 /* ════════════════ 저장소 키 ════════════════ */
 const K_CFG='figure-draw.config.v1', K_STOCK='figure-draw.stock.v1', K_LOG='figure-draw.log.v1', K_COOL='figure-draw.cooldown.v1';
 const K_STATE='figure-draw.draw-state.v1';
-const APP_VER='figure-v15';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
+const APP_VER='figure-v16';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
 
 /* ════════════════ 기본 설정 (관리자 미설정 시) ════════════════ */
 function defaultConfig(){

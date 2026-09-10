@@ -9,7 +9,7 @@ function harness(idleAvailable){
    async decodeAudioData(){return buffer(new Float32Array([0,1,2,3]));}
    createBuffer(){return buffer(new Float32Array(4));}
    createGain(){return {gain:{setValueAtTime(){},linearRampToValueAtTime(){}},connect(){},disconnect(){}};}
-   createBufferSource(){const source={connect(){},disconnect(){},start(...args){calls.push({samples:[...source.buffer.getChannelData(0)],loop:!!source.loop,args});},stop(){calls.push({stopped:true});}};return source;}
+   createBufferSource(){const source={playbackRate:{value:1},connect(){},disconnect(){},start(...args){calls.push({samples:[...source.buffer.getChannelData(0)],loop:!!source.loop,rate:source.playbackRate.value,args});},stop(){calls.push({stopped:true});}};return source;}
   }
   const context={window:{AudioContext:FakeAudio},fetch:async url=>({ok:idleAvailable||!/idle|summon/.test(url),arrayBuffer:async()=>new ArrayBuffer(1)})};
   vm.createContext(context);vm.runInContext(code,context);
@@ -39,7 +39,7 @@ setImmediate(()=>{
  const s2=calls.length;assert.equal(context.sound.cue('summon',0,true),true);assert.ok(calls.slice(s2).every(c=>c.stopped));
  assert.equal(partial.context.sound.has('summon'),false);assert.equal(partial.context.sound.cue('summon',0,false),false);
  console.log('PASS: idle bed offset/loop, summon one-shot cue/clamp, mute, stop on scrub, and fallback signal when the idle buffer is unavailable');
- const op=calls.length;context.sound.cue('open',.4,false);
- const opening=calls.slice(op).find(c=>!c.stopped);assert.equal(opening.loop,false);assert.equal(opening.args[1],.4);
+ const op=calls.length;context.sound.cue('open',.4,false,false,1.8);
+ const opening=calls.slice(op).find(c=>!c.stopped);assert.equal(opening.rate,1.8);assert.equal(shot.rate,1);assert.equal(bed.rate,1);assert.equal(opening.loop,false);assert.equal(opening.args[1],.4);
  console.log('PASS: automatic opening reuses decoded forward audio at the video offset');
 });

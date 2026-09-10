@@ -12,6 +12,12 @@ evaluate(fs.readFileSync('app/draw-engine.js','utf8'));
 evaluate(fs.readFileSync('app/scroll-audio.js','utf8'));
 evaluate(fs.readFileSync('app/figure.js','utf8'));
 evaluate("stock={ip1:[0,10]};cfg.figureWinPercent=10;cfg.muted=true;"); // participation only: these journeys must reach the result directly (figure wins are covered below)
+w.renderAdmSettings();
+const skip=w.document.getElementById('hide-scroll-selection');assert.equal(skip.checked,false);skip.checked=true;w.saveScrollSelectionVisibility();
+assert.equal(evaluate('cfg.hideScrollSelection'),true);
+const stockBefore=evaluate('JSON.stringify(stock)');w.startFigureGame();assert.equal(evaluate('currentScreen'),'scr-open');assert.ok(evaluate('selectedScroll>=0&&selectedScroll<12'));assert.equal(evaluate('JSON.stringify(stock)'),stockBefore);assert.equal(evaluate('logArr.length'),0);
+w.backFromScroll();assert.equal(evaluate('currentScreen'),'scr-idle');
+skip.checked=false;w.saveScrollSelectionVisibility();assert.equal(evaluate('cfg.hideScrollSelection'),false);
 w.document.getElementById('idle-banner').click();
 assert.ok(w.document.getElementById('scr-scrolls').classList.contains('active'));
 assert.equal(w.document.querySelectorAll('.scroll-choice').length,12);
@@ -88,10 +94,10 @@ assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log
 assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log[0].figureWinPercent,null);
 assert.ok(w.document.getElementById('scr-open').classList.contains('active'));
 assert.equal(evaluate('openingTimer'),null);
-evaluate("var autoAudioSaved={has:ScrollSound.has,cue:ScrollSound.cue,stop:ScrollSound.stop};var autoCues=[],autoStops=0;ScrollSound.has=n=>n==='open';ScrollSound.cue=(n,t,m)=>{autoCues.push([n,t,m]);return true;};ScrollSound.stop=()=>{autoStops++;};cfg.muted=false;");
-w.playOpeningVideo();assert.equal(video.muted,true);
+evaluate("var autoAudioSaved={has:ScrollSound.has,cue:ScrollSound.cue,stop:ScrollSound.stop};var autoCues=[],autoStops=0;ScrollSound.has=n=>n==='open';ScrollSound.cue=(n,t,m,l,r)=>{autoCues.push([n,t,m,l,r]);return true;};ScrollSound.stop=()=>{autoStops++;};cfg.muted=false;");
+w.playOpeningVideo();assert.equal(video.muted,true);assert.equal(video.playbackRate,1.8);
 video.currentTime=.25;video.dispatchEvent(new w.Event('playing'));
-assert.equal(evaluate('autoCues[0][0]'),'open');assert.equal(evaluate('autoCues[0][1]'),.25);
+assert.equal(evaluate('autoCues[0][4]'),1.8);assert.equal(evaluate('autoCues[0][0]'),'open');assert.equal(evaluate('autoCues[0][1]'),.25);
 const stopsBefore=evaluate('autoStops');video.dispatchEvent(new w.Event('waiting'));assert.equal(evaluate('autoStops'),stopsBefore+1);
 video.currentTime=.75;video.dispatchEvent(new w.Event('playing'));assert.equal(evaluate('autoCues[1][1]'),.75);
 assert.equal(evaluate('bgmDucked'),true);
@@ -102,6 +108,7 @@ assert.equal(w.document.getElementById('scroll-open-btn').disabled,false);
 w.revealScroll();assert.equal(JSON.parse(w.localStorage.getItem('figure-draw.draw-state.v1')).log.length,1);
 video.dispatchEvent(new w.Event('ended'));assert.ok(w.document.getElementById('scr-result').classList.contains('active'));
 assert.equal(w.document.getElementById('scroll-whiteout').style.opacity,'1');
+assert.equal(w.document.getElementById('rc-grade').hidden,true);assert.equal(w.document.getElementById('rc-name').textContent,'아쉽게도 당첨을 놓쳤어요!\n다음 기회를 노려보아요!');
 assert.match(w.document.getElementById('result-countdown').textContent,/5초/);
 w.resetToIdle();assert.ok(w.document.getElementById('scr-idle').classList.contains('active'));
 // Idle loop keeps the clip's own audio, following the admin mute switch; BGM ducks for the whole screen.

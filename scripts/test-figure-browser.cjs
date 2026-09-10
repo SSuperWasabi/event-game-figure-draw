@@ -7,7 +7,7 @@ const server=http.createServer((req,res)=>{
  if(!file.startsWith(root+path.sep)){res.writeHead(403).end();return;}
  fs.readFile(file,(error,data)=>{
   if(error){res.writeHead(404).end();return;}
-  const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.mp4':'video/mp4','.wav':'audio/wav','.jpg':'image/jpeg'};
+  const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.mp4':'video/mp4','.wav':'audio/wav','.jpg':'image/jpeg','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp'};
   res.setHeader('Content-Type',types[path.extname(file)]||'application/octet-stream');
   // Deliberately no Range support: exercise the original local-server fallback too.
   res.end(data);
@@ -23,6 +23,8 @@ const server=http.createServer((req,res)=>{
   await page.route('**/sacred-open.mp4',async route=>{await mediaGate;await route.continue();});
   await page.goto(`http://127.0.0.1:${server.address().port}/`,{waitUntil:'domcontentloaded'});
   await page.evaluate(()=>{stock={ip1:[0,10]};cfg.muted=true;refreshIdleSoldout();});
+  await page.evaluate(()=>document.fonts.ready);
+  await page.screenshot({path:'.tools/lucky-idle.png'});
   await page.locator('#idle-banner').click();await page.locator('.scroll-choice').first().click();await page.locator('#scroll-next').click();
   await page.locator('#scroll-open-btn').click();
   const cold=await page.evaluate(()=>({ready:scrollVideo().readyState,visible:getComputedStyle(document.getElementById('scroll-idle-video')).visibility,log:logArr.length}));
@@ -31,6 +33,7 @@ const server=http.createServer((req,res)=>{
   release();
   try{await page.waitForFunction(()=>currentScreen==='scr-result',null,{timeout:20000});}
   catch(error){console.log(await page.evaluate(()=>({screen:currentScreen,drawing,pending:scrollAutoPending,events:window.scrollMediaDiagnostics,ready:scrollVideo().readyState,time:scrollVideo().currentTime,error:scrollVideo().error?.message,src:scrollVideo().currentSrc})));throw error;}
+  await page.screenshot({path:'.tools/lucky-result.png'});
   assert.equal(await page.evaluate(()=>logArr.length),1);
   assert.deepEqual(errors,[]);
   console.log('PASS: actual delayed MP4 playback keeps idle visible and completes automatic reveal once (Chrome, no Range server)');
@@ -56,6 +59,7 @@ const server=http.createServer((req,res)=>{
     const analyser=c.createAnalyser();bgmGains.get(bgmEl.idle).connect(analyser);analyser.fftSize=2048;
     const wait=()=>new Promise(r=>setTimeout(r,150)),rms=()=>{const data=new Float32Array(2048);analyser.getFloatTimeDomainData(data);return Math.sqrt(data.reduce((sum,v)=>sum+v*v,0)/data.length);};
     await wait();const normal=rms();revealScroll();await wait();const ducked=rms();
+    const openingRate=scrollVideo().playbackRate;
     const openingMuted=scrollVideo().muted,sharedOpening=openingAudioActive&&!openingNativeAudio;
     openingAudioActive=false;scrollVideo().pause();ScrollSound.stop();
     setBgmDucked(false);await wait();const restored=rms();bgmEl.idle.pause();
@@ -66,10 +70,10 @@ const server=http.createServer((req,res)=>{
     sfxBuf.special=buffer;playSfx('fanfare');await wait();
     const data=new Float32Array(fxAnalyser.fftSize);fxAnalyser.getFloatTimeDomainData(data);const effect=Math.sqrt(data.reduce((sum,v)=>sum+v*v,0)/data.length);
     c.createGain=createGain;analyser.disconnect();fxAnalyser.disconnect();URL.revokeObjectURL(url);
-    return {normal,ducked,restored,effect,openingMuted,sharedOpening};
+    return {normal,ducked,restored,effect,openingRate,openingMuted,sharedOpening};
   });
   assert.ok(measured.normal>.05);assert.ok(Math.abs(measured.ducked/measured.normal-.25)<.03,JSON.stringify(measured));
-  assert.equal(measured.openingMuted,true);assert.equal(measured.sharedOpening,true);
+  assert.equal(measured.openingRate,1.8);assert.equal(measured.openingMuted,true);assert.equal(measured.sharedOpening,true);
   assert.ok(Math.abs(measured.restored/measured.normal-1)<.08);assert.ok(measured.effect>.1);
   console.log('PASS: real WebAudio RMS verifies 25% BGM attenuation/restoration and audible uploaded fanfare signal',measured);
  }finally{await browser.close();}

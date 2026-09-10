@@ -66,3 +66,14 @@
 #summon-video-blur{position:absolute;top:-5%;left:-5%;width:110%;height:110%;object-fit:cover;pointer-events:none}
 #summon-veil{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;background:rgba(5,2,15,.25);-webkit-backdrop-filter:blur(28px) brightness(.75);backdrop-filter:blur(28px) brightness(.75)}
 #summon-video{position:relative;width:100%;height:100%;object-fit:contain;pointer-events:none}
+
+/* Lucky Draw: stable upper-third title and lower-third touch target. */
+#scr-idle .idle-brand{position:absolute;top:33.333%;left:0;width:100%;transform:translateY(-50%);animation:none;gap:clamp(18px,3vh,36px)}
+#scr-idle .idle-headline{width:100%}
+#scr-idle .idle-headline .ld-2{font-size:clamp(48px,13.2vw,135px);white-space:nowrap}
+#scr-idle .touch-banner{position:absolute;top:66.667%;left:50%;transform:translate(-50%,-50%);margin:0}
+#scr-result.participation-result #rc-grade{display:none}
+#scr-result.participation-result #rc-name{white-space:pre-line;font-size:4.7cqw;line-height:1.5;width:88%}
+
+#scr-idle .idle-brand,#scr-idle #idle-banner,#scr-idle .copyright{position:absolute!important}
+#scr-idle #idle-banner{animation:none}

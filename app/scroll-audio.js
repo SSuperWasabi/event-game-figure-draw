@@ -21,11 +21,11 @@ const ScrollSound=(()=>{
   function has(name){return !!(context&&clips[name]);}
   // Play a decoded clip from `offset` seconds (looping for the idle bed). Returns false only when Web Audio
   // cannot carry it, so the caller can fall back to the video element's own audio track.
-  function cue(name,offset,muted,loop=false){
+  function cue(name,offset,muted,loop=false,rate=1){
     stop();if(muted)return true;
     if(!has(name))return false;
     if(context.state!=='running')context.resume().catch(()=>{});
-    const buffer=clips[name],source=context.createBufferSource();source.buffer=buffer;source.loop=loop;
+    const buffer=clips[name],source=context.createBufferSource();source.buffer=buffer;source.loop=loop;source.playbackRate.value=rate;
     source.connect(context.destination);voices.add(source);
     source.onended=()=>{voices.delete(source);source.disconnect();};
     const at=Math.max(0,Number(offset)||0);
