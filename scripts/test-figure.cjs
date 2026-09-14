@@ -41,9 +41,26 @@ new vm.Script(inline);new vm.Script(fs.readFileSync('app/figure.js','utf8'));
 const src=fs.readFileSync('app/figure.js','utf8');
 const commit=src.slice(src.indexOf('function commitFigureDraw()'),src.indexOf('function revealScroll()'));
 const context={FigureDrawEngine:E,cfg:{ips},stock:structuredClone(stock),logArr:[],activeFigurePercent:()=>100,figureProbabilityEnabled:()=>true,nextSerial:()=>1,selectedScroll:3,K_STATE:'state',localStorage:{setItem(){throw Error('quota');}},curIp:null,lastResult:null};
-vm.createContext(context);vm.runInContext(commit,context);assert.throws(()=>context.commitFigureDraw(),/quota/);assert.deepEqual(context.stock,stock);assert.equal(context.logArr.length,0);assert.equal(context.lastResult,null);
+vm.createContext(context);vm.runInContext(src.slice(src.indexOf("function figureDrawPolicy()"),src.indexOf("function figureAvailable()"))+commit,context);assert.throws(()=>context.commitFigureDraw(),/quota/);assert.deepEqual(context.stock,stock);assert.equal(context.logArr.length,0);assert.equal(context.lastResult,null);
 let written;context.localStorage.setItem=(k,v)=>{written=JSON.parse(v);};context.commitFigureDraw();assert.equal(written.stock.a[0],1);assert.equal(written.log.length,1);assert.equal(written.log[0].scrollNumber,4);assert.equal(context.lastResult.kind,'figure');
 console.log('PASS: atomic inventory/log commit and storage failure leaves draw untouched');
 const sw=fs.readFileSync('app/sw.js','utf8');const assets=[...sw.matchAll(/'\.\/([^']+)'/g)].map(m=>m[1].split('?')[0]);for(const asset of assets)assert.ok(fs.existsSync('app/'+asset),asset);
 assert.ok(html.includes('figure.js'));assert.ok(html.includes('scr-scrolls'));assert.ok(html.includes('scr-open'));
 console.log('PASS: script syntax, screen integration and precached asset paths');
+
+
+
+const start=Date.parse('2026-09-14T10:00:00+09:00'),duration=24*60000;
+const config={figureCooldownEnabled:true,cooldownMin:20,figureIntervalEnabled:true,figureIntervalMin:24,figureIntervalStart:new Date(start).toISOString(),figureIntervalSeed:'test-seed'};
+for(const i of [0,4,5,1000]){
+ const release=E.intervalRelease(config,i);assert.ok(release>=start+i*duration&&release<start+(i+1)*duration);
+ assert.equal(E.timeGate(config,[],release-1).blocked,true);assert.equal(E.timeGate(config,[],release).guaranteed,true);
+ const wins=[{kind:'figure',timestamp:new Date(Math.ceil(release)).toISOString()}];assert.equal(E.timeGate(config,wins,Math.ceil(release)+1).blocked,true);
+ assert.equal(E.intervalRelease(JSON.parse(JSON.stringify(config)),i),release);
+}
+assert.equal(E.timeGate(config,[],start-1).blocked,true);
+assert.equal(E.timeGate({...config,figureIntervalSeed:''},[],start).blocked,true);
+const wins=[{kind:'figure',timestamp:new Date(start).toISOString()}];
+assert.equal(E.timeGate({...config,figureIntervalEnabled:false},wins,start+19*60000).blocked,true);
+assert.equal(E.timeGate({...config,figureIntervalEnabled:false},wins,start+20*60000).blocked,false);
+console.log('PASS: unlimited intervals, stable release times, one winner per interval and cooldown');

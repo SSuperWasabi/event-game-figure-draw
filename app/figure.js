@@ -196,7 +196,8 @@ document.getElementById('idle-video').addEventListener('timeupdate',()=>{
   if(currentScreen==='scr-idle'&&background.style.display!=='none'&&background.readyState>=2&&Math.abs(foreground.currentTime-background.currentTime)>.25){try{background.currentTime=foreground.currentTime;}catch{}}
 });
 
-function figureAvailable(){return FigureDrawEngine.availability(cfg.ips,stock,activeFigurePercent());}
+function figureDrawPolicy(){const gate=FigureDrawEngine.timeGate(cfg,logArr);return {gate,percent:gate.blocked?0:gate.guaranteed?(FigureDrawEngine.candidates(cfg.ips,stock,'figure').length?100:0):activeFigurePercent()};}
+function figureAvailable(){const policy=figureDrawPolicy();const state=FigureDrawEngine.availability(cfg.ips,stock,policy.percent);if(!state.ok&&policy.gate.blocked)state.reason=policy.gate.reason+' 참가상 재고를 준비해주세요.';return state;}
 refreshIdleSoldout = function(){
   const state=figureAvailable();
   document.getElementById('scr-idle').classList.toggle('soldout',!state.ok);
@@ -251,7 +252,7 @@ document.getElementById('kiosk').addEventListener('pointermove',()=>{if(!drawing
 document.getElementById('kiosk').addEventListener('keydown',resetIdle);
 
 function commitFigureDraw(){
-  const hit=FigureDrawEngine.draw(cfg.ips,stock,activeFigurePercent());
+  const hit=FigureDrawEngine.draw(cfg.ips,stock,figureDrawPolicy().percent);
   const actual=hit.sub==null?hit.p:hit.p.subs[hit.sub],serial=nextSerial();
   const nextLog=[...logArr,{timestamp:new Date().toISOString(),ipId:hit.ip.id,ipName:hit.ip.name,grade:hit.p.grade,prizeName:hit.sub==null?actual.name:hit.p.name+' - '+actual.name,isLastOne:false,luckyGrade:'',serial,kind:hit.kind,drawMode:figureProbabilityEnabled()?'fixed-probability':'stock',figureWinPercent:activeFigurePercent(),scrollNumber:selectedScroll+1}];
   // One localStorage write commits both inventory and log, before any reveal.
@@ -345,7 +346,7 @@ renderAdmIps = function(){
       media.innerHTML=`<button class="adm-btn sec" onclick="uploadFigureVideo(${ii},${pi},'videoKey')">${p.videoKey?'✓ ':''}상품 영상</button><button class="adm-btn sec" onclick="removeFigureVideo(${ii},${pi},'videoKey')">상품 영상 해제</button><button class="adm-btn sec" onclick="uploadFigureVideo(${ii},${pi},'popupVideoKey')">${p.popupVideoKey?'✓ ':''}클릭 팝업 영상</button><button class="adm-btn sec" onclick="removeFigureVideo(${ii},${pi},'popupVideoKey')">팝업 해제</button>`;row.after(media);
     });
   });
-  const note=document.createElement('p');note.className='figure-rule-note';note.textContent='피규어 / 참가상을 지정하고 실제 수량을 입력하세요. 기본은 전체 IP의 노출 경품을 합친 잔여 재고 비례 추첨입니다. 설정 탭에서 별도 피규어 확률을 켤 수 있습니다. 두 모드 모두 쿨다운·행운상은 적용하지 않습니다.';document.getElementById('pane-ips').prepend(note);
+  const note=document.createElement('p');note.className='figure-rule-note';note.textContent='피규어 / 참가상을 지정하고 실제 수량을 입력하세요. 기본은 전체 IP의 노출 경품을 합친 잔여 재고 비례 추첨입니다. 설정 탭에서 별도 피규어 확률을 켤 수 있습니다. 시간 제한은 설정 탭에서 관리하며 상품별 쿨다운과 행운상은 적용하지 않습니다.';document.getElementById('pane-ips').prepend(note);
 }
 async function uploadFigureVideo(ii,pi,field){
   const p=cfg.ips[ii].prizes[pi],f=await pickFile('video/*');if(!f)return;
@@ -365,14 +366,20 @@ renderAdmSettings = function(){
   visibility.innerHTML='<h4>현장 운영 · 시퀀스 간소화</h4>';
   const visibilityRow=document.getElementById('hide-scroll-selection').closest('.adm-row');
   const visibilityNote=visibilityRow.nextElementSibling;visibility.append(visibilityRow,visibilityNote);root.prepend(visibility);
-  ['set-cool','set-drawidle'].forEach(id=>{const el=document.getElementById(id);el.disabled=true;el.title='피규어 드로우에서는 사용하지 않는 기존 쿠지 설정';});
+  ['set-drawidle'].forEach(id=>{const el=document.getElementById(id);el.disabled=true;el.title='피규어 드로우에서는 사용하지 않는 기존 쿠지 설정';});
   root.querySelector('button[onclick="toggleLineup()"]').disabled=true;
+  const timing=document.createElement('div');timing.className='adm-card';
+  timing.innerHTML=`<h4>피규어 당첨 시간 제한</h4><label><input id="figure-cool-on" type="checkbox" ${cfg.figureCooldownEnabled===true?'checked':''}> 당첨 후 쿨다운 사용</label><p>시간(분)은 기본 설정의 쿨다운(분)에서 지정합니다. 모든 피규어에 공통 적용합니다.</p><label><input id="figure-interval-on" type="checkbox" ${cfg.figureIntervalEnabled===true?'checked':''}> 구간당 1개 배정</label><div class="adm-row"><label>구간 길이(분)</label><input id="figure-interval-min" type="number" min="1" value="${Number(cfg.figureIntervalMin)||24}"></div><div class="adm-row"><label>운영 시작 시각</label><input id="figure-interval-start" type="datetime-local"></div><p>시작 시각부터 설정한 길이로 구간을 계속 나눕니다. 구간 수 제한 없이 남은 피규어 재고를 사용합니다. 각 구간의 무작위 시각 이후 첫 참여자에게 피규어를 지급합니다. 이 모드에서는 확률과 쿨다운 대신 구간 배정을 적용합니다. 참여자나 재고가 없으면 지급할 수 없으며 미지급분은 이월하지 않습니다. 당일 배포할 재고만 입력하세요. 재고 소진 후에는 참가상만 진행합니다. 둘째 날에는 시작 날짜/시각을 다시 설정하세요.</p><button class="adm-btn pri" onclick="saveFigureTiming()">시간 제한 저장</button>`;
+  root.prepend(timing);
+  const date=new Date(cfg.figureIntervalStart||Date.now());if(Number.isFinite(date.getTime()))document.getElementById('figure-interval-start').value=new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);
+  document.getElementById('set-cool').closest('.adm-row').nextElementSibling.textContent='피규어 전체 당첨 후 재당첨 제한 시간입니다. 위 시간 제한 카드에서 ON/OFF를 설정하세요. 0분이면 제한하지 않습니다.';
+
   // BGM playback mode lives inside the existing BGM card.
   const bgmHead=[...root.querySelectorAll('.adm-card h4')].find(h=>h.textContent.startsWith('배경음악'));
   if(bgmHead){const box=document.createElement('div');box.className='figure-bgm-mode';
     box.innerHTML=`<div class="adm-row"><label for="bgm-mode">재생 방식</label><select id="bgm-mode" onchange="saveBgmMode()"><option value="screen" ${bgmSingle()?'':'selected'}>화면별 전환</option><option value="single" ${bgmSingle()?'selected':''}>한 곡 연속 루핑</option></select></div><div class="adm-row"><label for="bgm-single-slot">연속 재생 곡</label><select id="bgm-single-slot" onchange="saveBgmMode()" ${bgmSingle()?'':'disabled'}>${BGM_SLOTS.map(s=>`<option value="${s}" ${bgmSingleSlot()===s?'selected':''}>${{idle:'대기',select:'선택',play:'뽑기'}[s]} 슬롯</option>`).join('')}</select></div><p class="figure-rule-note">한 곡 연속 루핑이면 화면이 바뀌어도 선택한 슬롯의 곡이 끊기지 않고 이어집니다. 소환서 화면과 개봉 연출 중 BGM 볼륨 자동 감소(25%)와 음소거는 그대로 적용됩니다. 선택한 슬롯에 업로드된 곡이 없으면 무음입니다.</p>`;
     bgmHead.parentElement.appendChild(box);}
-  const note=document.createElement('p');note.className='figure-rule-note';note.textContent='소환서 선택 → 드래그 개봉 → 결과 흐름을 사용합니다. 기존 라인업·NPC·쿨다운 설정은 보존되지만 이 흐름에는 적용하지 않습니다. 대기 영상과 BGM·효과음은 그대로 사용할 수 있습니다.';card.appendChild(note);
+  const note=document.createElement('p');note.className='figure-rule-note';note.textContent='소환서 선택 → 드래그 개봉 → 결과 흐름을 사용합니다. 기존 라인업·NPC 설정은 이 흐름에 적용하지 않습니다. 피규어 전체 쿨다운과 구간 제한은 위 시간 제한 카드에서 설정합니다. 대기 영상과 BGM·효과음은 그대로 사용할 수 있습니다.';card.appendChild(note);
 }
 function saveScrollSelectionVisibility(){
   const old=cfg.hideScrollSelection;cfg.hideScrollSelection=document.getElementById('hide-scroll-selection').checked;
@@ -432,3 +439,12 @@ for(const event of ['loadedmetadata','resize','emptied'])document.getElementById
 window.addEventListener('resize',syncIdleTitleLayout);
 if(document.fonts)document.fonts.ready.then(syncIdleTitleLayout);
 requestAnimationFrame(syncIdleTitleLayout);
+
+function saveFigureTiming(){
+ const enabled=document.getElementById('figure-interval-on').checked,minutes=Number(document.getElementById('figure-interval-min').value),start=new Date(document.getElementById('figure-interval-start').value);
+ const cooldown=Number(document.getElementById('set-cool').value);
+ if(!Number.isFinite(cooldown)||cooldown<0||!Number.isInteger(minutes)||minutes<1||(enabled&&!Number.isFinite(start.getTime()))){toast('시간과 운영 시작 시각을 확인해주세요');return;}
+ const old={...cfg};Object.assign(cfg,{figureCooldownEnabled:document.getElementById('figure-cool-on').checked,cooldownMin:cooldown,figureIntervalEnabled:enabled,figureIntervalMin:minutes,figureIntervalStart:Number.isFinite(start.getTime())?start.toISOString():''});
+ if(enabled&&(old.figureIntervalStart!==cfg.figureIntervalStart||old.figureIntervalMin!==minutes||!cfg.figureIntervalSeed))cfg.figureIntervalSeed=Array.from(crypto.getRandomValues(new Uint32Array(4))).join('-');
+ if(!saveCfg()){for(const key of ['figureIntervalSeed','figureCooldownEnabled','cooldownMin','figureIntervalEnabled','figureIntervalMin','figureIntervalStart']){if(Object.hasOwn(old,key))cfg[key]=old[key];else delete cfg[key];}toast('설정 저장 실패');return;}refreshIdleSoldout();toast('시간 제한 저장됨');
+}
