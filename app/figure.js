@@ -111,7 +111,7 @@ function startScrollLoop(){
   cancelScrollWait();
   scrollPrimeEpoch++;scrollPrimeTask=null;
   ScrollSound.stop();scrollMix(currentScreen==='scr-open');scrollWhiteout(0);
-  scrollScrubbing=false;scrollSeekTarget=null;scrollVideo().pause();
+  scrollScrubbing=false;scrollSeekTarget=null;scrollVideo().pause();setScrollProgress(0);
   document.getElementById('scroll-drag').classList.remove('scrubbing');
   // The idle loop keeps the clip's own sound (frames 0-100 of the source), following the admin mute switch.
   // Web Audio carries it (the same path as the drag sound); the video track is unmuted only as a fallback.
