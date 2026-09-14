@@ -537,7 +537,7 @@
 /* ════════════════ 저장소 키 ════════════════ */
 const K_CFG='figure-draw.config.v1', K_STOCK='figure-draw.stock.v1', K_LOG='figure-draw.log.v1', K_COOL='figure-draw.cooldown.v1';
 const K_STATE='figure-draw.draw-state.v1';
-const APP_VER='figure-v24';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
+const APP_VER='figure-v25';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
 
 /* ════════════════ 기본 설정 (관리자 미설정 시) ════════════════ */
 function defaultConfig(){
@@ -678,6 +678,18 @@ document.getElementById('kiosk').addEventListener('pointerdown', resetIdle, true
 /* ════════════════ S1 대기 ════════════════ */
 let curIp=null, drawing=false, lastResult=null, lastNpcId=null, lastIdleVideoId=null;
 let idleMediaEpoch=0;
+let idleVideoBag=[],idleVideoRoster='';
+function nextIdleVideo(vids){
+  const roster=JSON.stringify(vids.map(v=>v.id).sort());
+  if(roster!==idleVideoRoster){idleVideoBag=[];idleVideoRoster=roster;}
+  if(!vids.length)return null;
+  if(!idleVideoBag.length){
+    idleVideoBag=vids.map(v=>v.id);
+    for(let i=idleVideoBag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[idleVideoBag[i],idleVideoBag[j]]=[idleVideoBag[j],idleVideoBag[i]];}
+    if(idleVideoBag.length>1&&idleVideoBag[0]===lastIdleVideoId){const j=1+Math.floor(Math.random()*(idleVideoBag.length-1));[idleVideoBag[0],idleVideoBag[j]]=[idleVideoBag[j],idleVideoBag[0]];}
+  }
+  const id=idleVideoBag.shift();lastIdleVideoId=id;return vids.find(v=>v.id===id);
+}
 async function playIdleVideo(){
   const epoch=++idleMediaEpoch;
   const v=document.getElementById('idle-video');
@@ -686,11 +698,9 @@ async function playIdleVideo(){
   if(v._ourl){ try{ URL.revokeObjectURL(v._ourl); }catch(e){} v._ourl=null; }
   const vids=cfg.idleVideos||[];
   let blob=null;
+  if(!vids.length)nextIdleVideo(vids);
   if(vids.length){
-    let pool=vids;
-    if(vids.length>1 && lastIdleVideoId){ const f=vids.filter(x=>x.id!==lastIdleVideoId); if(f.length) pool=f; }
-    const pick=pool[Math.floor(Math.random()*pool.length)];
-    lastIdleVideoId=pick.id;
+    const pick=nextIdleVideo(vids);
     blob=await idbGet('idlevid_'+pick.id);
   }
   if(epoch!==idleMediaEpoch)return;
@@ -1394,7 +1404,7 @@ function renderAdmSettings(){
     <div class="adm-row"><label>배너</label><button class="adm-btn sec" onclick="admPickHeroBanner()">이미지 업로드</button><button class="adm-btn sec" onclick="openAdjust(cfg.heroBannerKey,'hero')">조정</button><button class="adm-btn dng" onclick="delHeroBanner()">삭제</button><span class="adm-thumb">${cfg.heroBannerKey&&imgCache[cfg.heroBannerKey]?`<img src="${imgCache[cfg.heroBannerKey]}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">`:'🎁'}</span></div>
     <div class="muted-note">IP 선택(S2) 화면 상단 배너 전용. 미설정 시 1번 IP 배너를 사용 · 가로형 권장</div>
   </div>
-  <div class="adm-card"><h4>대기 영상 (여러 개 = 진입마다 랜덤)</h4>
+  <div class="adm-card"><h4>대기 영상 (전체 1회씩 무작위 순환)</h4>
     ${idleVidRows}
     <div class="adm-row" style="margin-top:8px"><button class="adm-btn sec" onclick="addIdleVideo()">+ 영상 추가</button></div>
     <div class="muted-note">대기화면에 들어갈 때마다 랜덤으로 하나 재생(직전과 다른 영상) · 세로 MP4 무음 · 최대 150MB</div>
