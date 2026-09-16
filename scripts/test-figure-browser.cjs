@@ -26,14 +26,19 @@ const server=http.createServer((req,res)=>{
   await page.evaluate(()=>document.fonts.ready);
   await page.screenshot({path:'.tools/lucky-idle.png'});
   await page.locator('#idle-banner').click();await page.locator('.scroll-choice').first().click();await page.locator('#scroll-next').click();
+  const initialHandle=await page.evaluate(()=>{const handleNode=document.querySelector('.drag-handle'),animation=handleNode.getAnimations()[0];animation.pause();animation.currentTime=0;const track=document.querySelector('.drag-track').getBoundingClientRect(),handle=handleNode.getBoundingClientRect();animation.play();return {trackLeft:track.left,handleLeft:handle.left};});
+  assert.ok(Math.abs(initialHandle.handleLeft-initialHandle.trackLeft)<=3,'drag handle must start against the far-left track border');
+  await page.evaluate(()=>{const box=document.getElementById('scroll-drag');box.classList.add('scrubbing');setScrollProgress(0);});await page.screenshot({path:'.tools/lucky-open.png'});
+  await page.evaluate(()=>document.getElementById('scroll-drag').classList.remove('scrubbing'));
+  await page.waitForFunction(()=>document.querySelector('.drag-handle').getBoundingClientRect().left>document.querySelector('.drag-track').getBoundingClientRect().left+20,null,{timeout:3000});
+  await page.screenshot({path:'.tools/lucky-open-motion.png'});
   const arrow=await page.evaluate(()=>{
-    const box=document.getElementById('scroll-drag'),handle=box.querySelector('.drag-handle'),hint=box.querySelector('.drag-hint');
+    const box=document.getElementById('scroll-drag'),chevrons=[...box.querySelectorAll('.drag-chevron')],handle=box.querySelector('.drag-handle'),hint=box.querySelector('.drag-hint');
     box.classList.add('scrubbing');
-    const positions=[0,.6,.2,0].map(progress=>{box.style.setProperty('--progress',progress);return handle.getBoundingClientRect().left;});
-    const visible=getComputedStyle(hint).opacity;box.classList.remove('scrubbing');return {positions,visible};
+    const states=[0,.6,.2,0].map(progress=>{setScrollProgress(progress);return {active:chevrons.filter(node=>node.classList.contains('is-active')).length,left:handle.getBoundingClientRect().left};});
+    const visible=getComputedStyle(hint).opacity,guideSize=parseFloat(getComputedStyle(document.querySelector('.drag-guide')).fontSize),cueStroke=parseFloat(getComputedStyle(chevrons[0]).borderRightWidth);box.classList.remove('scrubbing');return {count:chevrons.length,states,visible,guideSize,cueStroke};
   });
-  assert.ok(arrow.positions[1]>arrow.positions[2]&&arrow.positions[2]>arrow.positions[0]);
-  assert.equal(arrow.positions[0],arrow.positions[3]);assert.equal(arrow.visible,'1');
+  assert.equal(arrow.count,10);assert.deepEqual(arrow.states.map(state=>state.active),[0,6,2,0]);assert.ok(arrow.states[1].left>arrow.states[2].left&&arrow.states[2].left>arrow.states[0].left);assert.equal(arrow.states[0].left,arrow.states[3].left);assert.equal(arrow.visible,'0.75');assert.equal(arrow.guideSize,34.5);assert.equal(arrow.cueStroke,12);
   await page.locator('#scroll-open-btn').click();
   const cold=await page.evaluate(()=>({ready:scrollVideo().readyState,visible:getComputedStyle(document.getElementById('scroll-idle-video')).visibility,log:logArr.length}));
   assert.equal(cold.ready,0,'test must click while real video is still loading');

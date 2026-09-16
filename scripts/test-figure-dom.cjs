@@ -23,7 +23,8 @@ assert.ok(w.document.getElementById('scr-scrolls').classList.contains('active'))
 assert.equal(w.document.querySelectorAll('.scroll-choice').length,12);
 w.chooseScroll(2);assert.equal(w.document.getElementById('scroll-next').disabled,false);
 w.openSelectedScroll();assert.ok(w.document.getElementById('scr-open').classList.contains('active'));
-assert.equal(w.document.getElementById('open-number').textContent,'3번 소환서');assert.ok(w.document.querySelector('#scr-open .drag-hint .drag-handle'));
+assert.equal(w.document.getElementById('open-number').textContent,'3번 소환서');assert.equal(w.document.querySelectorAll('#scr-open .drag-hint .drag-chevron').length,10);assert.ok(w.document.querySelector('#scr-open .drag-handle'));
+assert.equal(w.document.querySelectorAll('#scr-open .drag-chevron.is-active').length,0);w.setScrollProgress(.6);assert.equal(w.document.querySelectorAll('#scr-open .drag-chevron.is-active').length,6);w.setScrollProgress(0);
 assert.equal(w.document.getElementById('idle-sub').textContent,'');assert.equal(w.document.querySelector('#scr-scrolls .title small'),null);
 const drag=w.document.getElementById('scroll-drag'),video=w.document.getElementById('scroll-video');
 Object.defineProperty(drag,'clientWidth',{value:400});Object.defineProperty(video,'duration',{value:4.066667,configurable:true});Object.defineProperty(video,'readyState',{value:4,configurable:true});

@@ -233,9 +233,12 @@ function openSelectedScroll(){
   summonUnlock();startBgm('play');go('scr-open');
 }
 function setScrollProgress(value){
-  document.getElementById('scroll-drag').style.setProperty('--progress',value);
+  const box=document.getElementById('scroll-drag'),progress=Number.isFinite(value)?Math.max(0,Math.min(1,value)):0;
+  box.style.setProperty('--progress',progress);
+  const chevrons=box.querySelectorAll('.drag-chevron'),activeCount=Math.ceil(progress*chevrons.length);
+  chevrons.forEach((chevron,index)=>chevron.classList.toggle('is-active',index<activeCount));
   const v=scrollVideo();
-  if(scrollScrubbing&&Number.isFinite(v.duration)&&v.duration>0){scrollSeekTarget=Math.max(0,Math.min(1,value))*Math.max(0,v.duration-1/30);ScrollSound.scrub(scrollSeekTarget,!!cfg.muted);updateScrollWhiteout(scrollSeekTarget);flushScrollSeek();}
+  if(scrollScrubbing&&Number.isFinite(v.duration)&&v.duration>0){scrollSeekTarget=progress*Math.max(0,v.duration-1/30);ScrollSound.scrub(scrollSeekTarget,!!cfg.muted);updateScrollWhiteout(scrollSeekTarget);flushScrollSeek();}
 }
 manageIdle = function(){
   clearTimeout(idleTimer);
