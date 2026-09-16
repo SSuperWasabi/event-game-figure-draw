@@ -189,12 +189,7 @@ go = function(id){
   if(id!=='scr-open'){openingAudioActive=false;cancelScrollWait();scrollPrimeEpoch++;scrollPrimeTask=null;}
   figureBase.go(id);if(id==='scr-idle')syncIdleTitleLayout();
   if(id==='scr-open')startScrollLoop();else{ScrollSound.stop();scrollMix(false);scrollScrubbing=false;scrollSeekTarget=null;scrollVideo().pause();document.getElementById('scroll-idle-video').pause();if(id!=='scr-result'){cancelAnimationFrame(whiteoutFrame);scrollWhiteout(0);}}
-  for(const key of ['idle-video','idle-video-blur']){const v=document.getElementById(key);if(id==='scr-idle'&&v.getAttribute('src')&&v.style.display!=='none')v.play().catch(()=>{});else v.pause();}
 };
-document.getElementById('idle-video').addEventListener('timeupdate',()=>{
-  const foreground=document.getElementById('idle-video'),background=document.getElementById('idle-video-blur');
-  if(currentScreen==='scr-idle'&&background.style.display!=='none'&&background.readyState>=2&&Math.abs(foreground.currentTime-background.currentTime)>.25){try{background.currentTime=foreground.currentTime;}catch{}}
-});
 
 function figureDrawPolicy(){const gate=FigureDrawEngine.timeGate(cfg,logArr);return {gate,percent:gate.blocked?0:gate.guaranteed?(FigureDrawEngine.candidates(cfg.ips,stock,'figure').length?100:0):activeFigurePercent()};}
 function figureAvailable(){const policy=figureDrawPolicy();const state=FigureDrawEngine.availability(cfg.ips,stock,policy.percent);if(!state.ok&&policy.gate.blocked)state.reason=policy.gate.reason+' 참가상 재고를 준비해주세요.';return state;}

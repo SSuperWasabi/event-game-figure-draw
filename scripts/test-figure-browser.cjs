@@ -24,8 +24,12 @@ const server=http.createServer((req,res)=>{
   await page.goto(`http://127.0.0.1:${server.address().port}/`,{waitUntil:'domcontentloaded'});
   await page.evaluate(()=>{stock={ip1:[0,10]};cfg.muted=true;refreshIdleSoldout();});
   await page.evaluate(()=>document.fonts.ready);
+  await page.evaluate(async()=>{const buf=await (await fetch('assets/figure/sacred-idle.mp4')).arrayBuffer();await idbPut('idlevid_browser_test',{buf,type:'video/mp4'});cfg.idleVideos=[{id:'browser_test'}];await playIdleVideo();});
+  await page.waitForFunction(()=>{const v=document.getElementById('idle-video'),b=document.getElementById('idle-video-blur');return v.readyState>=2&&b.style.backgroundImage.startsWith('url("data:image/jpeg');},null,{timeout:10000});
+  const idleVideo=await page.evaluate(()=>{const v=document.getElementById('idle-video'),b=document.getElementById('idle-video-blur');return {videos:document.querySelectorAll('#scr-idle video').length,backdropTag:b.tagName,playing:!v.paused};});
+  assert.deepEqual(idleVideo,{videos:1,backdropTag:'DIV',playing:true});
   await page.screenshot({path:'.tools/lucky-idle.png'});
-  await page.locator('#idle-banner').click();await page.locator('.scroll-choice').first().click();await page.locator('#scroll-next').click();
+  await page.locator('#idle-banner').click();assert.equal(await page.evaluate(()=>document.getElementById('idle-video').paused),true);await page.locator('.scroll-choice').first().click();await page.locator('#scroll-next').click();
   const initialHandle=await page.evaluate(()=>{const track=document.querySelector('.drag-track').getBoundingClientRect(),handleNode=document.querySelector('.drag-handle'),handle=handleNode.getBoundingClientRect();return {trackLeft:track.left,handleLeft:handle.left,animations:handleNode.getAnimations().length};});
   assert.ok(Math.abs(initialHandle.handleLeft-initialHandle.trackLeft)<=3,'drag handle must start against the far-left track border');
   assert.equal(initialHandle.animations,0,'idle drag handle must remain stationary');
