@@ -100,8 +100,11 @@ localStorage 키와 IndexedDB 이름, 서비스 워커 캐시 이름은 기존 �
 - `app/`: PWA 본체와 동봉 에셋
 - `app/figure.js`, `app/figure.css`: 소환서 흐름 및 기존 백오피스 확장
 - `app/draw-engine.js`: 종류별 확률·재고 추첨 규칙
+- `resource/`: 공유용 이미지·영상·오디오·폰트 분류본(`final-assets` / `-old`)
 - `index.html`: 앱으로 이동하는 루트 진입점
 - `scripts/prepare-*.py`: 원본 영상에서 앱용 최적화본을 만드는 스크립트(Pillow, imageio-ffmpeg)
+- `scripts/organize-share.ps1`: 작업 폴더 미디어를 공유 구조로 재분류하고 현재 앱 에셋 사본을 갱신하는 스크립트
+- `scripts/create-share.ps1`: Git 이력과 재설치 가능한 로컬 도구를 제외한 공유용 ZIP 생성 스크립트
 - `KUJI-REFERENCE-ANALYSIS.md`: 기존 코드 분석과 후속 보완 사항
 - `WORKLOG.md`: 날짜별 작업 일지(무엇을 왜 바꿨는지)
 - `.nojekyll`: GitHub Pages 정적 파일 배포
@@ -112,7 +115,9 @@ GitHub Pages는 main 브랜치 루트를 배포한다. 빌드 및 패키지 설�
 
 ## 원본 에셋
 
-작업 폴더 루트의 PNG 원본과 `reference-kuji/`는 로컬 참조용으로 Git에서 제외했다. 특히 100MB를 넘는 원본이 있어 그대로 일반 Git 커밋에 포함하지 않는다. 앱용 최적화본은 `app/assets/figure/`에 포함되어 있다. 미참조 이전 시안 scroll-looping-2.mp4 및 scroll3-idle.mp4 / scroll3-open.mp4 / scroll3-poster.jpg는 로컬에만 남겨두고 커밋하지 않았다. `.kuji` 운영 백업도 Git에서 제외한다.
+공유용 미디어는 `resource/images`, `resource/videos`, `resource/audio`, `resource/fonts`로 종류별 분류한다. 각 유형의 `final-assets`에는 현재 `app/assets/`에 실제 적용된 파일의 공유용 사본을 둔다. 관리자 화면에서 업로드해 현장에서 사용하는 메인 루핑 영상과 상품 영상도 `resource/videos/final-assets/`에 포함한다. 원본·이전 시안·미사용 파일·미리보기 산출물은 `-old`에 보관한다. 기반 쿠지 참고 저장소는 `resource/project-reference/-old/`에 둔다. 세부 구조는 `resource/README.md`를 참고한다.
+
+실제 PWA가 참조하는 정본은 계속 `app/assets/`다. `final-assets`는 전달 편의를 위한 사본이므로 앱 파일을 바꿀 때는 `app/assets/`와 앱/서비스워커 버전을 먼저 갱신한 뒤 `powershell -ExecutionPolicy Bypass -File scripts/organize-share.ps1`을 실행한다. 대용량 `resource/`와 `.kuji` 운영 백업은 Git에서 제외하지만 공유 ZIP에는 포함할 수 있다. 일반 Git 커밋에는 100MB를 넘는 원본을 넣지 않는다.
 
 ## 운영 전 검증
 

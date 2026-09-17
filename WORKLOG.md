@@ -1,5 +1,13 @@
 # 작업 일지
 
+## 2026-09-16 — 공유용 작업 폴더 및 리소스 정리
+
+- 작업 폴더 루트에 흩어진 이미지·영상·오디오와 기존 `resource/`, `sound/`, 프레임 시퀀스, 미리보기 산출물을 `resource/images`, `resource/videos`, `resource/audio`, `resource/fonts`로 종류별 분류했다.
+- 최초 분류에서 기존 `resource/`의 생성 영상들을 후보로 판단해 `videos/-old/generated-candidates`에 두었으나, 이 파일들이 현장용 메인 루핑 영상과 꽝 당첨 상품 영상임을 확인했다. 운영 최종 자산으로 다시 분류해 모두 `resource/videos/final-assets/`로 이동했다.
+- 현재 PWA의 URL과 배포 동작을 깨뜨리지 않도록 실행 정본은 `app/assets/`에 유지했다. 현재 적용 파일의 공유용 사본은 각 `final-assets`에, 원본·후보·이전 시안·미사용 파일은 각 `-old`에 보관한다. 기반 쿠지 참고 저장소는 `resource/project-reference/-old/`로 이동했다.
+- 동일 구조를 다시 갱신할 수 있도록 경로 이탈 검사와 유형별 요약을 포함한 `scripts/organize-share.ps1`을 추가했다. `resource/README.md`에는 전달받는 부서가 정본과 보관본을 구분할 수 있도록 폴더 역할을 기록했다.
+- 공유 ZIP에서는 Git 내부 이력과 재설치 가능한 `.tools/node_modules`, 로컬 브라우저·ffmpeg 패키지를 제외하고 앱 코드, 문서, 스크립트, 최종/과거 리소스를 포함한다. `scripts/create-share.ps1`로 동일한 ZIP을 다시 만들 수 있다. 폴더 정리 후 앱 회귀 검사를 다시 실행한다.
+
 ## 2026-09-16 — figure-v28 메인 루핑 영상 디코딩 부하 개선
 
 - 메인 영상과 확대·블러 배경에서 동일 영상을 동시에 재생하던 이중 디코딩을 제거했다. 블러 배경은 첫 프레임을 최대 320px JPEG 정지 이미지로 만들어 재사용한다.
