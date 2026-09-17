@@ -537,7 +537,7 @@
 /* ════════════════ 저장소 키 ════════════════ */
 const K_CFG='figure-draw.config.v1', K_STOCK='figure-draw.stock.v1', K_LOG='figure-draw.log.v1', K_COOL='figure-draw.cooldown.v1';
 const K_STATE='figure-draw.draw-state.v1';
-const APP_VER='figure-v28';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
+const APP_VER='figure-v29';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
 
 /* ════════════════ 기본 설정 (관리자 미설정 시) ════════════════ */
 function defaultConfig(){
@@ -662,7 +662,7 @@ function go(id){
   currentScreen=id;
   const idleVideo=document.getElementById('idle-video');
   if(id==='scr-idle'){if(idleVideo.src&&idleVideo.dataset.loading!=='1')idleVideo.play().catch(()=>{});}
-  else idleVideo.pause();
+  else {idleVideo.pause();primeNextIdleVideo();}
   manageIdle();
 }
 function manageIdle(){
@@ -681,9 +681,10 @@ document.getElementById('kiosk').addEventListener('pointerdown', resetIdle, true
 /* ════════════════ S1 대기 ════════════════ */
 let curIp=null, drawing=false, lastResult=null, lastNpcId=null, lastIdleVideoId=null;
 let idleMediaEpoch=0;
-let idleVideoBag=[],idleVideoRoster='';
+let idleVideoBag=[],idleVideoRoster='',idleVideoPrefetch=null;
+function idleVideoRosterKey(vids){return JSON.stringify(vids.map(v=>v.id).sort());}
 function nextIdleVideo(vids){
-  const roster=JSON.stringify(vids.map(v=>v.id).sort());
+  const roster=idleVideoRosterKey(vids);
   if(roster!==idleVideoRoster){idleVideoBag=[];idleVideoRoster=roster;}
   if(!vids.length)return null;
   if(!idleVideoBag.length){
@@ -693,20 +694,35 @@ function nextIdleVideo(vids){
   }
   const id=idleVideoBag.shift();lastIdleVideoId=id;return vids.find(v=>v.id===id);
 }
+/* The main video keeps one decoder. While the participant is away from the idle screen,
+   read only the next shuffled clip from IndexedDB so returning does not wait on a large buffer. */
+function primeNextIdleVideo(){
+  const vids=cfg.idleVideos||[],roster=idleVideoRosterKey(vids);
+  if(!vids.length)return;
+  if(idleVideoPrefetch&&idleVideoPrefetch.roster===roster&&vids.some(v=>v.id===idleVideoPrefetch.id))return;
+  const pick=nextIdleVideo(vids);if(!pick)return;
+  const entry={id:pick.id,roster,promise:null};
+  entry.promise=idbGet('idlevid_'+pick.id).catch(()=>null);idleVideoPrefetch=entry;
+}
 async function playIdleVideo(){
   const epoch=++idleMediaEpoch;
   const v=document.getElementById('idle-video');
   const background=document.getElementById('idle-video-blur');
   const previousUrl=v._ourl;v.dataset.loading='1';v.pause();
   const vids=cfg.idleVideos||[];
-  let blob=null;
+  const roster=idleVideoRosterKey(vids);
+  let blob=null,pick=null;
   if(!vids.length)nextIdleVideo(vids);
   if(vids.length){
-    const pick=nextIdleVideo(vids);
-    blob=await idbGet('idlevid_'+pick.id);
+    const prefetched=idleVideoPrefetch;
+    if(prefetched&&prefetched.roster===roster&&vids.some(item=>item.id===prefetched.id)){
+      idleVideoPrefetch=null;pick=vids.find(item=>item.id===prefetched.id);blob=await prefetched.promise;
+    }else{
+      idleVideoPrefetch=null;pick=nextIdleVideo(vids);blob=await idbGet('idlevid_'+pick.id);
+    }
   }
   if(epoch!==idleMediaEpoch)return;
-  if(blob){ try{ let src,nextUrl=null; if(typeof blob==='string'){ src=blob; } else { const b=mediaBlob(blob); if(!b) throw 0; src=nextUrl=URL.createObjectURL(b); } v._ourl=nextUrl;v.src=src;v.load();v.style.display='block';if(currentScreen==='scr-idle')v.play().catch(()=>{});if(previousUrl&&previousUrl!==nextUrl)setTimeout(()=>{try{URL.revokeObjectURL(previousUrl);}catch(e){}},0); }catch(e){ v.style.display='none'; } }
+  if(blob){ try{ let src,nextUrl=null; if(typeof blob==='string'){ src=blob; } else { const b=mediaBlob(blob); if(!b) throw 0; src=nextUrl=URL.createObjectURL(b); } v._ourl=nextUrl;v.dataset.idleId=pick?pick.id:'';v.src=src;v.load();v.style.display='block';if(currentScreen==='scr-idle')v.play().catch(()=>{});if(previousUrl&&previousUrl!==nextUrl)setTimeout(()=>{try{URL.revokeObjectURL(previousUrl);}catch(e){}},0); }catch(e){ v.style.display='none'; } }
   else { v.removeAttribute('src');v.load();v.style.display='none';background.style.backgroundImage='none';document.getElementById('idle-video-veil').style.display='none';if(previousUrl){try{URL.revokeObjectURL(previousUrl);}catch(e){}}v._ourl=null; }
   delete v.dataset.loading;
   syncIdleBackdrop();
@@ -1562,10 +1578,9 @@ document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
         if(blob){ await idbPut('idlevid_'+id,blob); cfg.idleVideos.push({id}); saveCfg(); await idbDel('idle_video'); } }
     }
   }catch(e){}
-  await loadAllImages();
-  await loadBgm();
-  await loadSfx();
+  // Start the large idle-video read first. Supporting media no longer blocks its request.
   await bootIdle();
+  await Promise.all([loadAllImages(),loadBgm(),loadSfx()]);
   applyMute();
   // 서비스워커: 실제 배포(HTTPS 도메인)에서만 캐싱. localhost 개발 중에는 끄고 항상 최신 파일 사용.
   const isLocal = ['localhost','127.0.0.1','::1',''].includes(location.hostname);
