@@ -7,6 +7,7 @@ const evaluate=code=>require('node:vm').runInContext(code,dom.getInternalVMConte
 w.indexedDB={open:()=>({})};w.matchMedia=()=>({matches:true});
 w.HTMLMediaElement.prototype.play=async()=>{};w.HTMLMediaElement.prototype.pause=()=>{};w.HTMLMediaElement.prototype.load=()=>{};
 w.HTMLElement.prototype.setPointerCapture=()=>{};w.confirm=()=>true;
+evaluate(fs.readFileSync('app/idle-video.js','utf8'));
 for(const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g))evaluate(m[1]);
 evaluate(fs.readFileSync('app/draw-engine.js','utf8'));
 evaluate(fs.readFileSync('app/scroll-audio.js','utf8'));

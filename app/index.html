@@ -149,11 +149,6 @@
   /* S1 대기 — 시네마틱 폴리시(스포트라이트·비네팅·그레인·보케·시머·스파클) */
   #scr-idle { justify-content:center; align-items:center; cursor:pointer; gap:40px; }
   #idle-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; }
-  #idle-video-poster { --idle-poster:url("assets/idle-fallback.jpg"); position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; background:#100626; opacity:1; transition:opacity .24s ease; }
-  #idle-video-poster::before,#idle-video-poster::after { content:""; position:absolute; inset:0; background-image:var(--idle-poster); background-position:center; background-repeat:no-repeat; }
-  #idle-video-poster::before { inset:-4%; background-size:cover; filter:blur(24px) brightness(.72); }
-  #idle-video-poster::after { background-size:contain; }
-  #idle-video-poster.is-hidden { opacity:0; }
   /* 루핑 영상/배경 가독성 레이어 — 차콜 35% 스크림 + 중앙 보라 스포트라이트 */
   #scr-idle::before { content:""; position:absolute; inset:0; z-index:1; pointer-events:none;
     background:
@@ -162,7 +157,7 @@
   /* 미세 그레인 — 밴딩 제거·질감 */
   #scr-idle::after { content:""; position:absolute; inset:0; z-index:1; pointer-events:none; opacity:.05; mix-blend-mode:overlay;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-size:120px 120px; }
-  #scr-idle > *:not(#idle-video):not(#idle-video-blur):not(#idle-video-veil):not(#idle-video-poster):not(.bubbles):not(.idle-sparkles):not(#admin-tap) { position:relative; z-index:3; }
+  #scr-idle > *:not(.idle-media-slot):not(#idle-media-cover):not(#idle-video-blur):not(#idle-video-veil):not(.bubbles):not(.idle-sparkles):not(#admin-tap) { position:relative; z-index:3; }
   #scr-idle .touch-banner { position:relative; overflow:hidden; background:var(--grad-lucky); border:1px solid rgba(255,255,255,.5); color:var(--gold-ink); font-size:18px; font-weight:800; padding:15px 38px; border-radius:var(--r-pill); text-shadow:0 1px 1px rgba(255,255,255,.35); animation:pulse 1.6s infinite; }
   #scr-idle .touch-banner::after { content:""; position:absolute; top:0; left:-65%; width:55%; height:100%; pointer-events:none; background:linear-gradient(100deg,transparent,rgba(255,255,255,.45),transparent); animation:bannerShimmer 3.4s ease-in-out infinite; }
   @keyframes bannerShimmer { 0%{left:-65%} 55%,100%{left:135%} }
@@ -385,8 +380,9 @@
   <div class="screen active" id="scr-idle">
     <div id="idle-video-blur" aria-hidden="true" style="display:none"></div>
     <div id="idle-video-veil" aria-hidden="true" style="display:none"></div>
-    <video id="idle-video" muted loop playsinline autoplay preload="auto" disablepictureinpicture style="display:none"></video>
-    <div id="idle-video-poster" aria-hidden="true"></div>
+    <video id="idle-video" class="idle-media-slot" muted loop playsinline preload="auto" disablepictureinpicture></video>
+    <video id="idle-video-next" class="idle-media-slot" muted loop playsinline preload="auto" disablepictureinpicture></video>
+    <div id="idle-media-cover" aria-hidden="true"></div>
     <div class="bubbles" id="bubbles"></div>
     <div class="idle-sparkles">
       <i style="top:15%;left:13%;font-size:14px;animation-delay:0s">✦</i>
@@ -539,12 +535,12 @@
   </div>
 </div>
 
+<script src="idle-video.js"></script>
 <script>
 /* ════════════════ 저장소 키 ════════════════ */
 const K_CFG='figure-draw.config.v1', K_STOCK='figure-draw.stock.v1', K_LOG='figure-draw.log.v1', K_COOL='figure-draw.cooldown.v1';
 const K_STATE='figure-draw.draw-state.v1';
-const K_IDLE_POSTER='figure-draw.idle-poster.v1';
-const APP_VER='figure-v30';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
+const APP_VER='figure-v31';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
 
 /* ════════════════ 기본 설정 (관리자 미설정 시) ════════════════ */
 function defaultConfig(){
@@ -667,9 +663,9 @@ function go(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   currentScreen=id;
-  const idleVideo=document.getElementById('idle-video');
-  if(id==='scr-idle'){if(idleVideo.src&&idleVideo.dataset.loading!=='1')idleVideo.play().catch(()=>{});}
-  else {idleVideo.pause();primeNextIdleVideo();}
+  document.getElementById('scr-idle').inert=id!=='scr-idle';
+  if(id==='scr-idle'){idleDeck.visible=true;if(document.hidden)idleDeck.suspend();else idleDeck.resume();}
+  else idleDeck.leave();
   manageIdle();
 }
 function manageIdle(){
@@ -687,8 +683,7 @@ document.getElementById('kiosk').addEventListener('pointerdown', resetIdle, true
 
 /* ════════════════ S1 대기 ════════════════ */
 let curIp=null, drawing=false, lastResult=null, lastNpcId=null, lastIdleVideoId=null;
-let idleMediaEpoch=0;
-let idleVideoBag=[],idleVideoRoster='',idleVideoPrefetch=null;
+let idleVideoBag=[],idleVideoRoster='';
 function idleVideoRosterKey(vids){return JSON.stringify(vids.map(v=>v.id).sort());}
 function nextIdleVideo(vids){
   const roster=idleVideoRosterKey(vids);
@@ -701,65 +696,42 @@ function nextIdleVideo(vids){
   }
   const id=idleVideoBag.shift();lastIdleVideoId=id;return vids.find(v=>v.id===id);
 }
-/* The main video keeps one decoder. While the participant is away from the idle screen,
-   read only the next shuffled clip from IndexedDB so returning does not wait on a large buffer. */
-function primeNextIdleVideo(){
-  const vids=cfg.idleVideos||[],roster=idleVideoRosterKey(vids);
-  if(!vids.length)return;
-  if(idleVideoPrefetch&&idleVideoPrefetch.roster===roster&&vids.some(v=>v.id===idleVideoPrefetch.id))return;
-  const pick=nextIdleVideo(vids);if(!pick)return;
-  const entry={id:pick.id,roster,promise:null};
-  entry.promise=idbGet('idlevid_'+pick.id).catch(()=>null);idleVideoPrefetch=entry;
-}
-async function playIdleVideo(){
-  const epoch=++idleMediaEpoch;
-  const v=document.getElementById('idle-video');
-  const background=document.getElementById('idle-video-blur');
-  const previousUrl=v._ourl;v.dataset.loading='1';v.pause();
-  const vids=cfg.idleVideos||[];
-  const roster=idleVideoRosterKey(vids);
-  let blob=null,pick=null;
-  if(vids.length)showIdlePoster();
-  if(!vids.length)nextIdleVideo(vids);
-  if(vids.length){
-    const prefetched=idleVideoPrefetch;
-    if(prefetched&&prefetched.roster===roster&&vids.some(item=>item.id===prefetched.id)){
-      idleVideoPrefetch=null;pick=vids.find(item=>item.id===prefetched.id);blob=await prefetched.promise;
-    }else{
-      idleVideoPrefetch=null;pick=nextIdleVideo(vids);blob=await idbGet('idlevid_'+pick.id);
-    }
+/* Prepare the next actual video element, not just its IndexedDB bytes. */
+const idleDeck=new IdleVideoDeck({
+  videos:[...document.querySelectorAll('.idle-media-slot')],
+  list:()=>cfg.idleVideos||[],pick:nextIdleVideo,read:key=>idbGet(key),toBlob:mediaBlob,
+  changed:video=>{
+    captureIdleBackdrop(video);syncIdleBackdrop();
+    document.dispatchEvent(new Event('idle-video-change'));
   }
-  if(epoch!==idleMediaEpoch)return;
-  if(blob){ try{ let src,nextUrl=null; if(typeof blob==='string'){ src=blob; } else { const b=mediaBlob(blob); if(!b) throw 0; src=nextUrl=URL.createObjectURL(b); } v._ourl=nextUrl;v.dataset.idleId=pick?pick.id:'';v.src=src;v.load();v.style.display='block';if(currentScreen==='scr-idle')v.play().catch(()=>{});if(previousUrl&&previousUrl!==nextUrl)setTimeout(()=>{try{URL.revokeObjectURL(previousUrl);}catch(e){}},0); }catch(e){ v.style.display='none'; } }
-  else { v.removeAttribute('src');v.load();v.style.display='none';background.style.backgroundImage='none';document.getElementById('idle-video-veil').style.display='none';if(!vids.length)hideIdlePoster(true);if(previousUrl){try{URL.revokeObjectURL(previousUrl);}catch(e){}}v._ourl=null; }
-  delete v.dataset.loading;
-  syncIdleBackdrop();
+});
+window.idleVideoDiagnostics=idleDeck.diagnostics;
+function primeNextIdleVideo(){return idleDeck.prime();}
+function playIdleVideo(){return idleDeck.enter();}
+/* This still is only the blurred letterbox fill, never a foreground poster. */
+function captureIdleBackdrop(v=document.getElementById('idle-video')){
+  if(!v||!v.videoWidth||!v.videoHeight||v.readyState<2||v._backdropId===v.dataset.idleId)return;
+  try{
+    const scale=Math.min(1,320/Math.max(v.videoWidth,v.videoHeight)),canvas=document.createElement('canvas');
+    canvas.width=Math.max(2,Math.round(v.videoWidth*scale));canvas.height=Math.max(2,Math.round(v.videoHeight*scale));
+    canvas.getContext('2d',{alpha:false}).drawImage(v,0,0,canvas.width,canvas.height);
+    v._idleBackdrop=canvas.toDataURL('image/jpeg',.65);v._backdropId=v.dataset.idleId;
+  }catch(e){}
 }
-/* A low-resolution still from the decoded first frame fills letterbox space. Keeping a second video decoder
-   running for the blurred backdrop caused visible frame drops on iPad. */
-function captureIdleBackdrop(){
-  const v=document.getElementById('idle-video'),b=document.getElementById('idle-video-blur');
-  if(!v.videoWidth||!v.videoHeight)return;
-  try{const max=640,scale=Math.min(1,max/Math.max(v.videoWidth,v.videoHeight)),canvas=document.createElement('canvas');canvas.width=Math.max(2,Math.round(v.videoWidth*scale));canvas.height=Math.max(2,Math.round(v.videoHeight*scale));canvas.getContext('2d',{alpha:false}).drawImage(v,0,0,canvas.width,canvas.height);const data=canvas.toDataURL('image/jpeg',.7);b.style.backgroundImage=`url("${data}")`;setIdlePoster(data);try{localStorage.setItem(K_IDLE_POSTER,data);}catch(e){}}
-  catch(e){}
-}
-function setIdlePoster(data){const p=document.getElementById('idle-video-poster');if(data)p.style.setProperty('--idle-poster',`url("${data}")`);}
-function showIdlePoster(){document.getElementById('idle-video-poster').classList.remove('is-hidden');}
-function hideIdlePoster(immediate=false){const p=document.getElementById('idle-video-poster');if(immediate){p.style.transition='none';p.classList.add('is-hidden');requestAnimationFrame(()=>p.style.removeProperty('transition'));return;}requestAnimationFrame(()=>requestAnimationFrame(()=>p.classList.add('is-hidden')));}
-function restoreIdlePoster(){try{const data=localStorage.getItem(K_IDLE_POSTER);if(data)setIdlePoster(data);}catch(e){}if((cfg.idleVideos||[]).length)showIdlePoster();else hideIdlePoster(true);}
 function syncIdleBackdrop(){
   const v=document.getElementById('idle-video'),b=document.getElementById('idle-video-blur'),veil=document.getElementById('idle-video-veil');
-  const need=v.style.display!=='none'&&v.videoWidth>0&&v.clientWidth>0&&Math.abs(v.videoWidth/v.videoHeight-v.clientWidth/v.clientHeight)>.03;
-  b.style.display=veil.style.display=need?'block':'none';
+  const need=v.classList.contains('is-current')&&v.videoWidth>0&&v.clientWidth>0&&Math.abs(v.videoWidth/v.videoHeight-v.clientWidth/v.clientHeight)>.03;
+  b.style.display='block';b.style.backgroundImage=need&&v._idleBackdrop?`url("${v._idleBackdrop}")`:'none';
+  veil.style.display=need?'block':'none';
 }
-document.getElementById('idle-video').addEventListener('loadedmetadata',syncIdleBackdrop);
-document.getElementById('idle-video').addEventListener('loadeddata',()=>{captureIdleBackdrop();syncIdleBackdrop();});
-document.getElementById('idle-video').addEventListener('playing',()=>{if(currentScreen==='scr-idle')hideIdlePoster();});
-document.addEventListener('visibilitychange',()=>{const v=document.getElementById('idle-video');if(document.hidden)v.pause();else if(currentScreen==='scr-idle'&&v.src)v.play().catch(()=>{});});
-window.addEventListener('resize',()=>{ if(document.getElementById('idle-video').style.display!=='none') syncIdleBackdrop(); });
-restoreIdlePoster();
+for(const video of document.querySelectorAll('.idle-media-slot')){
+  video.addEventListener('loadedmetadata',syncIdleBackdrop);
+  video.addEventListener('loadeddata',()=>{captureIdleBackdrop(video);syncIdleBackdrop();});
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)idleDeck.suspend();else idleDeck.resume();});
+window.addEventListener('resize',syncIdleBackdrop);
 async function bootIdle(){
-  await playIdleVideo();
+  await idleDeck.enter({advance:false,visible:currentScreen==='scr-idle'});
   refreshIdleSoldout();
 }
 function refreshIdleSoldout(){

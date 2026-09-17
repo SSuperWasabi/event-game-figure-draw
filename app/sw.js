@@ -1,8 +1,9 @@
 /* 컴투스 팝업 쿠지 — Service Worker
    앱 자산을 사전 캐싱해 오프라인에서도 동작하게 한다.
    ※ 앱을 수정·재배포할 때는 CACHE 버전을 올려야 태블릿이 새 버전을 받는다. */
-const CACHE = 'figure-draw-v30';
+const CACHE = 'figure-draw-v31';
 const ASSETS = [
+  './idle-video.js',
   './figure.css',
   './draw-engine.js',
   './figure.js',

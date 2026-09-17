@@ -407,13 +407,14 @@ function saveFigureRules(){
   if(!saveCfg()){cfg.figureProbabilityEnabled=old.enabled;cfg.figureWinPercent=old.percent;toast('설정 저장 실패');return;}
   refreshIdleSoldout();toast(enabled?'설정 확률 추첨으로 저장됨':'재고 비례 추첨으로 저장됨');
 }
-bootIdle();
+// The IndexedDB initialization in index.html owns the single initial boot.
+document.getElementById('idle-sub').textContent='';
 
 // Position overlays from the actual contained video's geometry; never change playback.
 function syncIdleTitleLayout(){
   const screen=document.getElementById('scr-idle'),v=document.getElementById('idle-video');
   const w=screen.clientWidth,h=screen.clientHeight;if(!w||!h)return;
-  const known=v.style.display!=='none'&&v.videoWidth>0&&v.videoHeight>0;
+  const known=v.classList.contains('is-current')&&v.videoWidth>0&&v.videoHeight>0;
   const ratio=known?v.videoWidth/v.videoHeight:16/9;
   const landscape=ratio>1;screen.dataset.videoOrientation=landscape?'landscape':'portrait';
   const brand=screen.querySelector('.idle-brand'),button=document.getElementById('idle-banner');
@@ -433,7 +434,8 @@ function syncIdleTitleLayout(){
   screen.style.setProperty('--idle-title-y',Math.min(h-buttonHeight-100,titleY)+'px');
   screen.style.setProperty('--idle-touch-y',Math.min(h-buttonHeight/2-60,buttonY)+'px');
 }
-for(const event of ['loadedmetadata','resize','emptied'])document.getElementById('idle-video').addEventListener(event,syncIdleTitleLayout);
+for(const video of document.querySelectorAll('.idle-media-slot'))for(const event of ['loadedmetadata','resize','emptied'])video.addEventListener(event,syncIdleTitleLayout);
+document.addEventListener('idle-video-change',syncIdleTitleLayout);
 window.addEventListener('resize',syncIdleTitleLayout);
 if(document.fonts)document.fonts.ready.then(syncIdleTitleLayout);
 requestAnimationFrame(syncIdleTitleLayout);

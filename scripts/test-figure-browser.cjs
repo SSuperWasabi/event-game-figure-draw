@@ -24,15 +24,11 @@ const server=http.createServer((req,res)=>{
   await page.goto(`http://127.0.0.1:${server.address().port}/`,{waitUntil:'domcontentloaded'});
   await page.evaluate(()=>{stock={ip1:[0,10]};cfg.muted=true;refreshIdleSoldout();});
   await page.evaluate(()=>document.fonts.ready);
-  await page.evaluate(async()=>{const buf=await (await fetch('assets/figure/sacred-idle.mp4')).arrayBuffer();await idbPut('idlevid_browser_test',{buf,type:'video/mp4'});cfg.idleVideos=[{id:'browser_test'}];const original=idbGet,gate=new Promise(resolve=>window.releaseIdleVideo=resolve);idbGet=async key=>{if(key==='idlevid_browser_test')await gate;idbGet=original;return original(key);};playIdleVideo();});
-  const waitingPoster=await page.evaluate(()=>{const p=document.getElementById('idle-video-poster');return {hidden:p.classList.contains('is-hidden'),image:getComputedStyle(p,'::after').backgroundImage};});
-  assert.equal(waitingPoster.hidden,false);assert.match(waitingPoster.image,/idle-fallback\.jpg/);
-  await page.evaluate(()=>window.releaseIdleVideo());
-  await page.waitForFunction(()=>{const v=document.getElementById('idle-video'),b=document.getElementById('idle-video-blur');return v.readyState>=2&&b.style.backgroundImage.startsWith('url("data:image/jpeg');},null,{timeout:10000});
-  await page.waitForFunction(()=>document.getElementById('idle-video-poster').classList.contains('is-hidden'),null,{timeout:10000});
-  assert.match(await page.evaluate(()=>localStorage.getItem(K_IDLE_POSTER)||''),/^data:image\/jpeg/);
+  await page.evaluate(async()=>{const buf=await(await fetch('assets/figure/sacred-idle.mp4')).arrayBuffer();await idbPut('idlevid_browser_test',{buf,type:'video/mp4'});cfg.idleVideos=[{id:'browser_test'}];await playIdleVideo();});
+  await page.waitForFunction(()=>idleDeck.active?.state==='ready'&&idleDeck.next?.state==='ready',null,{timeout:10000});
+  assert.equal(await page.locator('#idle-video-poster').count(),0);
   const idleVideo=await page.evaluate(()=>{const v=document.getElementById('idle-video'),b=document.getElementById('idle-video-blur');return {videos:document.querySelectorAll('#scr-idle video').length,backdropTag:b.tagName,playing:!v.paused};});
-  assert.deepEqual(idleVideo,{videos:1,backdropTag:'DIV',playing:true});
+  assert.deepEqual(idleVideo,{videos:2,backdropTag:'DIV',playing:true});
   await page.screenshot({path:'.tools/lucky-idle.png'});
   await page.locator('#idle-banner').click();assert.equal(await page.evaluate(()=>document.getElementById('idle-video').paused),true);await page.locator('.scroll-choice').first().click();await page.locator('#scroll-next').click();
   const initialHandle=await page.evaluate(()=>{const track=document.querySelector('.drag-track').getBoundingClientRect(),handleNode=document.querySelector('.drag-handle'),handle=handleNode.getBoundingClientRect();return {trackLeft:track.left,handleLeft:handle.left,animations:handleNode.getAnimations().length};});
@@ -60,7 +56,7 @@ const server=http.createServer((req,res)=>{
   await page.screenshot({path:'.tools/lucky-result.png'});
   assert.equal(await page.evaluate(()=>logArr.length),1);
   assert.deepEqual(errors,[]);
-  console.log('PASS: delayed idle data shows the cached poster until actual playback; automatic reveal completes once (Chrome, no Range server)');
+  console.log('PASS: current + prepared next idle slots without a poster; automatic reveal completes once (Chrome, no Range server)');
   await page.unroute('**/sacred-open.mp4');
   await page.evaluate(()=>resetToIdle());
   await page.locator('#idle-banner').click();await page.locator('.scroll-choice').first().click();await page.locator('#scroll-next').click();
