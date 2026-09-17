@@ -1,7 +1,9 @@
 const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
 const html=fs.readFileSync('app/index.html','utf8');
 assert.match(html,/<div id="idle-video-blur"/);assert.doesNotMatch(html,/<video id="idle-video-blur"/);
+assert.match(html,/<div id="idle-video-poster"/);assert.match(html,/assets\/idle-fallback\.jpg/);
 assert.match(html,/idleVideo\.pause\(\)/);assert.match(html,/captureIdleBackdrop/);assert.match(html,/preload="auto"/);
+assert.match(html,/K_IDLE_POSTER/);assert.match(html,/addEventListener\('playing'.*hideIdlePoster/);
 assert.match(html,/else \{idleVideo\.pause\(\);primeNextIdleVideo\(\);\}/);
 assert.match(html,/idleVideoPrefetch/);assert.match(html,/entry\.promise=idbGet\('idlevid_'/);
 assert.match(html,/await bootIdle\(\);\s*await Promise\.all\(\[loadAllImages\(\),loadBgm\(\),loadSfx\(\)\]\)/);

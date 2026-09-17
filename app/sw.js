@@ -1,7 +1,7 @@
 /* 컴투스 팝업 쿠지 — Service Worker
    앱 자산을 사전 캐싱해 오프라인에서도 동작하게 한다.
    ※ 앱을 수정·재배포할 때는 CACHE 버전을 올려야 태블릿이 새 버전을 받는다. */
-const CACHE = 'figure-draw-v29';
+const CACHE = 'figure-draw-v30';
 const ASSETS = [
   './figure.css',
   './draw-engine.js',
@@ -27,6 +27,7 @@ const ASSETS = [
   './manifest.webmanifest',
   './assets/icon-192.png',
   './assets/icon-512.png',
+  './assets/idle-fallback.jpg',
   './assets/com2us-store-logo-white.svg',
   './assets/com2us-store-lockup-white.svg',
   './assets/fonts/Pretendard-Light.otf',

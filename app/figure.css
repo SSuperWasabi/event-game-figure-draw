@@ -4,6 +4,7 @@
 #scr-idle .touch-banner{border:1px solid #ffe588;border-radius:999px;background:var(--grad-gold);color:#422a02;width:fit-content;max-width:90%;padding:18px 42px;font-size:25px;box-shadow:var(--glow-gold);cursor:pointer;text-align:center;align-self:center;margin-inline:auto;flex:none}
 /* Idle video: one decoder only. A low-resolution first-frame still fills and blurs the letterbox background. */
 #scr-idle #idle-video{position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;object-fit:contain;object-position:center;background:transparent;pointer-events:none}
+#scr-idle #idle-video-poster{pointer-events:none}
 #scr-idle #idle-video-blur{position:absolute;top:-5%;left:-5%;width:110%;height:110%;z-index:0;pointer-events:none;background-position:center;background-size:cover;background-repeat:no-repeat}
 #scr-idle #idle-video-veil{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;background:rgba(15,4,42,.25);-webkit-backdrop-filter:blur(28px) brightness(.8);backdrop-filter:blur(28px) brightness(.8)}
 .figure-screen{padding:24px 22px;gap:18px;background:linear-gradient(#160a33bb,#160a33f5),url('assets/figure/arena.webp') center/cover}
