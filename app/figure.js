@@ -3,6 +3,34 @@ document.getElementById('idle-version').textContent=APP_VER;
 let selectedScroll=null, openingFrame=0, openingTimer=null, resultTick=null, resultDeadline=0;
 let figureMediaUrls=[], figurePopup=null, figureEpoch=0;
 const figureBase={renderAdmIps,renderAdmSettings,renderResult,resetToIdle,bootIdle,go,startBgm};
+const resultLoop=new PreparedResultVideo(document.getElementById('result-loop-video'),visible=>document.getElementById('scr-result').classList.toggle('using-result-loop',visible));
+window.resultVideoDiagnostics=resultLoop.diagnostics;
+let resultPrepareTimer=null;
+// Cache only the unique participation clip; multiple clips retain the legacy path.
+function participationVideoKey(){
+  const keys=new Set();
+  for(const ip of cfg.ips||[])for(const p of ip.prizes||[]){
+    if(p.hidden||(p.kind||(p.tier==='high'?'figure':'participation'))!=='participation')continue;
+    const media=isBundle(p)?p.subs:[p];
+    for(const item of media){const key=item.videoKey||p.videoKey;if(key)keys.add(key);}
+  }
+  return keys.size===1?[...keys][0]:null;
+}
+function reusableResultKey(result){const key=(result.media||result.prize).videoKey;return !result.high&&key&&key===participationVideoKey()?key:null;}
+function scheduleResultLoop(){
+  clearTimeout(resultPrepareTimer);resultPrepareTimer=null;
+  const key=participationVideoKey();
+  if(resultLoop.entry&&resultLoop.entry.key!==key)resultLoop.clear();
+  if(!key||!idb||document.hidden||resultLoop.visible||currentScreen==='scr-result')return;
+  // Prioritize the current and next main clips; never spin a second hidden loop.
+  const pending=[idleDeck.active,idleDeck.next].some(e=>e&&e.state!=='ready'&&e.state!=='failed');
+  if(pending||(drawing&&currentScreen==='scr-open')){resultPrepareTimer=setTimeout(scheduleResultLoop,150);return;}
+  resultLoop.prepare(key);
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){clearTimeout(resultPrepareTimer);resultLoop.suspend();}
+  else{resultLoop.resume();scheduleResultLoop();}
+});
 const figurePercent=()=>Number(cfg.figureWinPercent??10);
 const figureProbabilityEnabled=()=>cfg.figureProbabilityEnabled===true;
 const activeFigurePercent=()=>figureProbabilityEnabled()?figurePercent():null;
@@ -186,8 +214,11 @@ for(const event of ['waiting','pause'])scrollVideo().addEventListener(event,()=>
   if(openingAudioActive&&!openingNativeAudio)ScrollSound.stop();
 });
 go = function(id){
+  if(id!=='scr-result')resultLoop.hide();
+  const resultScreen=document.getElementById('scr-result');resultScreen.inert=id!=='scr-result';resultScreen.setAttribute('aria-hidden',String(id!=='scr-result'));
   if(id!=='scr-open'){openingAudioActive=false;cancelScrollWait();scrollPrimeEpoch++;scrollPrimeTask=null;}
   figureBase.go(id);if(id==='scr-idle')syncIdleTitleLayout();
+  scheduleResultLoop();
   if(id==='scr-open')startScrollLoop();else{ScrollSound.stop();scrollMix(false);scrollScrubbing=false;scrollSeekTarget=null;scrollVideo().pause();document.getElementById('scroll-idle-video').pause();if(id!=='scr-result'){cancelAnimationFrame(whiteoutFrame);scrollWhiteout(0);}}
 };
 
@@ -198,7 +229,7 @@ refreshIdleSoldout = function(){
   document.getElementById('scr-idle').classList.toggle('soldout',!state.ok);
   document.getElementById('idle-banner').textContent=state.ok?'TOUCH': '이벤트 준비 중 · 스태프에게 문의해주세요';
 }
-bootIdle = async function(){await figureBase.bootIdle();document.getElementById('idle-sub').textContent='';} // The idle screen shows the logo lockup only.
+bootIdle = async function(){await figureBase.bootIdle();document.getElementById('idle-sub').textContent='';scheduleResultLoop();} // The idle screen shows the logo lockup only.
 function startFigureGame(){
   const state=figureAvailable();if(!state.ok){toast(state.reason);return;}
   selectedScroll=null;
@@ -290,6 +321,7 @@ function completeScrollDrag(){
   el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();revealScroll();}});
 })();
 renderResult = function(){
+  resultLoop.hide();
   figureBase.renderResult();
   document.querySelector('#scr-result h2').textContent=lastResult.high?'제라투 소환 성공!':'아쉽네요!';
   document.getElementById('rc-grade').textContent=lastResult.high?'피규어 당첨':'';
@@ -298,15 +330,17 @@ renderResult = function(){
   if(!lastResult.high)document.getElementById('rc-name').textContent='아쉽게도 당첨을 놓쳤어요!\n다음 기회를 노려보아요!';
   if(!lastResult.wonImageKey&&lastResult.high){document.getElementById('rc-img').innerHTML='<img src="assets/figure/zeratu.webp" alt="제라투 피규어">';}
   clearInterval(resultTick);resultTick=setInterval(updateResultCountdown,200);
+  const key=reusableResultKey(lastResult);if(key)resultLoop.show(key);
 }
 function updateResultCountdown(){const e=document.getElementById('result-countdown');if(e)e.textContent=figurePopup?'영상 재생 중':`${Math.max(0,Math.ceil((resultDeadline-Date.now())/1000))}초 후 처음으로 돌아갑니다`;}
-async function figureMediaUrl(key){
-  if(!key)return null;const data=await idbGet(key);if(!data)return null;if(typeof data==='string')return data;
+async function figureMediaUrl(key,epoch=figureEpoch){
+  if(!key)return null;const data=await idbGet(key);if(!data||epoch!==figureEpoch)return null;if(typeof data==='string')return data;
   const blob=mediaBlob(data);if(!blob)return null;const url=URL.createObjectURL(blob);figureMediaUrls.push(url);return url;
 }
 async function startResultMedia(){
   const epoch=figureEpoch,result=lastResult,p=result.media||result.prize;
-  const url=await figureMediaUrl(p.videoKey);if(epoch!==figureEpoch||currentScreen!=='scr-result')return;
+  const key=reusableResultKey(result);
+  const url=key?null:await figureMediaUrl(p.videoKey,epoch);if(epoch!==figureEpoch||currentScreen!=='scr-result'||result!==lastResult)return;
   const el=document.getElementById('rc-img');
   if(url){el.innerHTML='';const v=document.createElement('video');v.src=url;v.muted=true;v.loop=true;v.playsInline=true;v.autoplay=true;el.appendChild(v);v.play().catch(()=>{});}
   el.onclick=p.popupVideoKey?()=>showFigurePopup(p.popupVideoKey):null;
@@ -328,7 +362,8 @@ function closeFigurePopup(){if(figurePopup){figurePopup.querySelector('video').p
 resetToIdle = function(){
   if(drawing&&currentScreen==='scr-open')return;
   figureEpoch++;clearTimeout(openingTimer);cancelAnimationFrame(openingFrame);clearInterval(resultTick);closeFigurePopup();hideSummon();
-  document.querySelectorAll('#scr-result video').forEach(v=>{v.pause();v.removeAttribute('src');v.load();});
+  resultLoop.hide();
+  document.querySelectorAll('#scr-result video:not(#result-loop-video)').forEach(v=>{v.pause();v.removeAttribute('src');v.load();});
   figureMediaUrls.forEach(url=>URL.revokeObjectURL(url));figureMediaUrls=[];
   selectedScroll=null;figureBase.resetToIdle();
 }
@@ -353,9 +388,9 @@ async function uploadFigureVideo(ii,pi,field){
   const key='figure_video_'+Date.now()+'_'+field;
   if(!await idbPut(key,{buf,type:f.type||'video/mp4'})){toast('영상 저장 공간을 확인해주세요');return;}
   const old=p[field];p[field]=key;if(!saveCfg()){p[field]=old;await idbDel(key);toast('설정 저장 실패');return;}
-  toast('영상 등록됨');renderAdmIps();
+  scheduleResultLoop();toast('영상 등록됨');renderAdmIps();
 }
-function removeFigureVideo(ii,pi,field){const p=cfg.ips[ii].prizes[pi],old=p[field];delete p[field];if(!saveCfg()){p[field]=old;toast('설정 저장 실패');return;}renderAdmIps();}
+function removeFigureVideo(ii,pi,field){const p=cfg.ips[ii].prizes[pi],old=p[field];delete p[field];if(!saveCfg()){p[field]=old;toast('설정 저장 실패');return;}scheduleResultLoop();renderAdmIps();}
 renderAdmSettings = function(){
   figureBase.renderAdmSettings();
   const root=document.getElementById('pane-settings'),card=document.createElement('div');card.className='adm-card';
@@ -409,6 +444,8 @@ function saveFigureRules(){
 }
 // The IndexedDB initialization in index.html owns the single initial boot.
 document.getElementById('idle-sub').textContent='';
+// Covers either ordering: IndexedDB boot finishing before or after this script.
+scheduleResultLoop();
 
 // Position overlays from the actual contained video's geometry; never change playback.
 function syncIdleTitleLayout(){

@@ -84,6 +84,21 @@
 #scr-idle .idle-headline .ld-2{font-size:clamp(48px,13.2vw,135px);white-space:nowrap}
 #scr-idle .touch-banner{position:absolute;top:66.667%;left:50%;transform:translate(-50%,-50%);margin:0}
 #scr-result.participation-result #rc-grade{display:none}
+#scr-result{display:flex;isolation:isolate;animation:none}
+#scr-result:not(.active){z-index:0;pointer-events:none}
+#scr-result.active{animation:fadeIn .35s ease}
+#scr-result:not(.active) #result-card{animation:none}
+#scr-result:not(.active) *{animation:none!important}
+#scr-result.active #result-card{animation:cardIn .55s cubic-bezier(.2,1.6,.4,1)}
+#result-media-cover{position:absolute;inset:0;z-index:100;background:var(--grad-stage);pointer-events:none}
+#scr-result.active #result-media-cover{display:none}
+#result-card #result-loop-video{object-fit:contain;pointer-events:none;background:transparent}
+#scr-result.active:not(.using-result-loop) #result-loop-video,
+#result-loop-video:not(.has-frame){visibility:hidden}
+/* Standby remains renderable behind the inactive screen's opaque cover. */
+#scr-result:not(.active) #result-loop-video{visibility:visible}
+#scr-result.using-result-loop #rc-img{color:transparent}
+#scr-result.using-result-loop #rc-img>*{visibility:hidden}
 #scr-result.participation-result #rc-name{white-space:pre-line;font-size:4.7cqw;line-height:1.5;width:88%}
 
 #scr-idle .idle-brand,#scr-idle #idle-banner,#scr-idle .copyright{position:absolute!important}

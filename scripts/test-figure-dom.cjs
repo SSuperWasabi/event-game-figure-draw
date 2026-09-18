@@ -11,6 +11,7 @@ evaluate(fs.readFileSync('app/idle-video.js','utf8'));
 for(const m of html.matchAll(/<script>([\s\S]*?)<\/script>/g))evaluate(m[1]);
 evaluate(fs.readFileSync('app/draw-engine.js','utf8'));
 evaluate(fs.readFileSync('app/scroll-audio.js','utf8'));
+evaluate(fs.readFileSync('app/result-video.js','utf8'));
 evaluate(fs.readFileSync('app/figure.js','utf8'));
 evaluate("stock={ip1:[0,10]};cfg.figureWinPercent=10;cfg.muted=true;"); // participation only: these journeys must reach the result directly (figure wins are covered below)
 w.renderAdmSettings();

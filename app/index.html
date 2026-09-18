@@ -450,10 +450,12 @@
   </div>
 
   <!-- S6 결과 (당첨 연출 포함 — 구 S5 통합) -->
-  <div class="screen" id="scr-result">
+  <div class="screen" id="scr-result" inert aria-hidden="true">
+    <div id="result-media-cover" aria-hidden="true"></div>
     <h2>🎉 당첨을 축하합니다!</h2>
     <div id="result-card">
       <div class="rc-img img-fallback" id="rc-img">🏆</div>
+      <video id="result-loop-video" class="rc-img" muted loop playsinline preload="auto" aria-hidden="true" disablepictureinpicture></video>
       <img class="rc-frame" id="rc-frame" src="assets/frames/frame-purple-card.png?v=2" alt="">
       <div class="rc-grade" id="rc-grade">A상</div>
       <div class="rc-name" id="rc-name"></div>
@@ -540,7 +542,7 @@
 /* ════════════════ 저장소 키 ════════════════ */
 const K_CFG='figure-draw.config.v1', K_STOCK='figure-draw.stock.v1', K_LOG='figure-draw.log.v1', K_COOL='figure-draw.cooldown.v1';
 const K_STATE='figure-draw.draw-state.v1';
-const APP_VER='figure-v31';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
+const APP_VER='figure-v32';  /* 캐시 갱신 확인용 — sw.js CACHE와 함께 올림 */
 
 /* ════════════════ 기본 설정 (관리자 미설정 시) ════════════════ */
 function defaultConfig(){
@@ -1601,6 +1603,7 @@ document.addEventListener('dblclick',e=>e.preventDefault(),{passive:false});
 </div>
 <div id="scroll-whiteout" aria-hidden="true"></div>
 <script src="scroll-audio.js"></script>
+<script src="result-video.js"></script>
 <script src="figure.js"></script>
 </body>
 </html>
